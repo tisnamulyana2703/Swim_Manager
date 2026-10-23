@@ -1,0 +1,8 @@
+{
+  "name": "Sistem Perlombaan Renang",
+  "description": "Aplikasi profesional manajemen perlombaan renang otomatis: registrasi atlet \u0026 klub, auto-seeding lintasan standar World Aquatics, input hasil \u0026 stopwatch, perolehan medali, dan cetak Berita Acara resmi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
