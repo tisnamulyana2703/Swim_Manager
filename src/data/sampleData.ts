@@ -124,6 +124,15 @@ export const INITIAL_CLUBS: Club[] = [
     coach: 'Agus Subiantoro',
     contactNumber: '0812-7766-5544',
   },
+  {
+    id: 'club-8',
+    code: 'LEMBANG',
+    name: 'Lembang Swimming Club',
+    city: 'Bandung Barat',
+    province: 'Jawa Barat',
+    coach: 'Budi Gunawan',
+    contactNumber: '0857-9411-2141',
+  },
 ];
 
 export const INITIAL_ATHLETES: Athlete[] = [
@@ -528,6 +537,87 @@ export const INITIAL_ATHLETES: Athlete[] = [
     ageGroup: 'AGE_9',
     registeredEvents: [
       { eventId: 'evt-107', seedTime: '00:24.10', seedTimeMs: 24100 },
+    ],
+  },
+  {
+    id: 'ath-412',
+    regNumber: '412',
+    name: 'Adeeva Clara Puteri Herdiansyah',
+    gender: 'FEMALE',
+    birthDate: '2012-12-12',
+    clubId: 'club-8',
+    age: 13,
+    ageGroup: 'KU_III',
+    registeredEvents: [
+      { eventId: 'evt-104', seedTime: 'NT', seedTimeMs: 0 },
+    ],
+  },
+  {
+    id: 'ath-413',
+    regNumber: '413',
+    name: 'Raden Danish Shaquil',
+    gender: 'MALE',
+    birthDate: '2015-04-28',
+    clubId: 'club-8',
+    age: 10,
+    ageGroup: 'KU_IV',
+    registeredEvents: [
+      { eventId: 'evt-102', seedTime: 'NT', seedTimeMs: 0 },
+    ],
+  },
+  {
+    id: 'ath-414',
+    regNumber: '414',
+    name: 'Muhammad Kenzi Al Farizi',
+    gender: 'MALE',
+    birthDate: '2011-08-30',
+    clubId: 'club-8',
+    age: 14,
+    ageGroup: 'KU_II',
+    registeredEvents: [
+      { eventId: 'evt-100', seedTime: 'NT', seedTimeMs: 0 },
+      { eventId: 'evt-101', seedTime: 'NT', seedTimeMs: 0 },
+      { eventId: 'evt-103', seedTime: 'NT', seedTimeMs: 0 },
+      { eventId: 'evt-105', seedTime: 'NT', seedTimeMs: 0 },
+    ],
+  },
+  {
+    id: 'ath-415',
+    regNumber: '415',
+    name: 'Alisha Nazeeha Azzahra',
+    gender: 'FEMALE',
+    birthDate: '2018-01-23',
+    clubId: 'club-8',
+    age: 7,
+    ageGroup: 'AGE_7',
+    registeredEvents: [
+      { eventId: 'evt-100', seedTime: 'NT', seedTimeMs: 0 },
+    ],
+  },
+  {
+    id: 'ath-416',
+    regNumber: '416',
+    name: 'Rafaeyza Arsenio Pradipta',
+    gender: 'MALE',
+    birthDate: '2017-01-20',
+    clubId: 'club-8',
+    age: 8,
+    ageGroup: 'AGE_8',
+    registeredEvents: [
+      { eventId: 'evt-100', seedTime: 'NT', seedTimeMs: 0 },
+    ],
+  },
+  {
+    id: 'ath-417',
+    regNumber: '417',
+    name: 'Maulana Malik Ibrahim',
+    gender: 'MALE',
+    birthDate: '2014-09-15',
+    clubId: 'club-8',
+    age: 11,
+    ageGroup: 'KU_IV',
+    registeredEvents: [
+      { eventId: 'evt-103', seedTime: 'NT', seedTimeMs: 0 },
     ],
   },
 ];

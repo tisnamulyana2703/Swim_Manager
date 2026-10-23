@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 
 export const EntryListView: React.FC = () => {
-  const { athletes, events, clubs, championship, setActiveTab, setSelectedEventId } = useSwimData();
+  const { athletes, events, clubs, championship, setActiveTab, setSelectedEventId, openPrintModal } = useSwimData();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEventFilter, setSelectedEventFilter] = useState<string>('ALL');
@@ -198,20 +198,42 @@ export const EntryListView: React.FC = () => {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs transition-colors"
+            onClick={() => openPrintModal('entry_list', undefined, selectedClubFilter !== 'ALL' ? selectedClubFilter : undefined)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-lg bg-red-600 hover:bg-red-700 text-white shadow-xs transition-colors cursor-pointer"
+            title="Cetak Entry List resmi sesuai format standar formulir registrasi Akuatik Indonesia"
           >
-            <Printer className="w-3.5 h-3.5 text-slate-500" />
-            <span>Cetak Entry List</span>
+            <Printer className="w-3.5 h-3.5 text-white" />
+            <span>Cetak Hasil Entry List</span>
           </button>
           <button
             onClick={handleExportCSV}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-sky-600 hover:bg-sky-700 text-white shadow-2xs transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-slate-700 hover:bg-slate-800 text-white shadow-2xs transition-colors cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Ekspor CSV</span>
           </button>
         </div>
+      </div>
+
+      {/* Banner Pemberitahuan Format Cetak Resmi */}
+      <div className="bg-red-50/80 border border-red-200 rounded-xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-red-600 text-white rounded-lg shrink-0">
+            <Printer className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-xs font-bold text-red-900">Format Cetak Entry List Standar Formulir Registrasi</div>
+            <div className="text-[11px] text-red-700 mt-0.5">
+              Tata letak cetak persis dokumen resmi: Judul terpisah <span className="font-mono font-semibold">E n t r y   L i s t</span>, baris narahubung klub/coach, kolom akte kelahiran, pemisahan Tgl/Bln/Tahun, Umur, KU, No. Acara, No. Lomba, dan waktu <span className="font-mono font-bold">NT</span>.
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={() => openPrintModal('entry_list', undefined, selectedClubFilter !== 'ALL' ? selectedClubFilter : undefined)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg shrink-0 cursor-pointer shadow-xs transition-colors"
+        >
+          <span>Pratinjau Cetak Sekarang</span>
+        </button>
       </div>
 
       {/* Summary KPI Badges */}

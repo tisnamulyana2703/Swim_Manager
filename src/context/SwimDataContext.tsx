@@ -47,6 +47,7 @@ export type ActiveTab =
   | 'minutes';
 
 export type PrintDocumentType = 
+  | 'entry_list'
   | 'start_list' 
   | 'start_list_all'
   | 'result_sheet' 
@@ -66,9 +67,11 @@ interface SwimDataContextType {
   
   // Print Modal
   activePrintDoc: PrintDocumentType;
-  openPrintModal: (docType: PrintDocumentType, targetEventId?: string) => void;
+  openPrintModal: (docType: PrintDocumentType, targetEventId?: string, targetClubId?: string) => void;
   closePrintModal: () => void;
   printTargetEventId: string | null;
+  printTargetClubId: string | null;
+  setPrintTargetClubId: (clubId: string | null) => void;
 
   // Data
   championship: ChampionshipInfo;
@@ -152,6 +155,7 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [selectedEventId, setSelectedEventId] = useState<string | null>('evt-101');
   const [activePrintDoc, setActivePrintDoc] = useState<PrintDocumentType>(null);
   const [printTargetEventId, setPrintTargetEventId] = useState<string | null>(null);
+  const [printTargetClubId, setPrintTargetClubId] = useState<string | null>(null);
 
   // Core Data States
   const [championship, setChampionship] = useState<ChampionshipInfo>(() => {
@@ -161,12 +165,24 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const [clubs, setClubs] = useState<Club[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_clubs`);
-    return saved ? JSON.parse(saved) : INITIAL_CLUBS;
+    if (!saved) return INITIAL_CLUBS;
+    const list: Club[] = JSON.parse(saved);
+    INITIAL_CLUBS.forEach(ic => {
+      if (!list.some(c => c.id === ic.id)) {
+        list.push(ic);
+      }
+    });
+    return list;
   });
 
   const [athletes, setAthletes] = useState<Athlete[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_athletes`);
     const list: Athlete[] = saved ? JSON.parse(saved) : INITIAL_ATHLETES;
+    INITIAL_ATHLETES.forEach(ia => {
+      if (!list.some(a => a.id === ia.id)) {
+        list.push(ia);
+      }
+    });
     return list.map((a, idx) => ({
       ...a,
       regNumber: a.regNumber || generateRegisterNumber(a.name, idx + 1),
@@ -213,14 +229,18 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem(`${STORAGE_KEY}_minutes`, JSON.stringify(officialMinutes));
   }, [officialMinutes]);
 
-  const openPrintModal = (docType: PrintDocumentType, targetEventId?: string) => {
+  const openPrintModal = (docType: PrintDocumentType, targetEventId?: string, targetClubId?: string) => {
     setActivePrintDoc(docType);
     setPrintTargetEventId(targetEventId || selectedEventId || events[0]?.id || null);
+    if (targetClubId !== undefined) {
+      setPrintTargetClubId(targetClubId || null);
+    }
   };
 
   const closePrintModal = () => {
     setActivePrintDoc(null);
     setPrintTargetEventId(null);
+    setPrintTargetClubId(null);
   };
 
   const updateChampionship = (info: Partial<ChampionshipInfo>) => {
@@ -719,6 +739,8 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         openPrintModal,
         closePrintModal,
         printTargetEventId,
+        printTargetClubId,
+        setPrintTargetClubId,
         championship,
         updateChampionship,
         clubs,
