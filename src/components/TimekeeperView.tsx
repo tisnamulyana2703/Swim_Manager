@@ -229,7 +229,7 @@ export const TimekeeperView: React.FC = () => {
     });
 
     saveHeatResults(currentEvent.id, selectedHeatNumber, payload);
-    alert(`Hasil Heat ${selectedHeatNumber} berhasil disimpan & dihitung!`);
+    alert(`Hasil Seri ${selectedHeatNumber} berhasil disimpan & dihitung!`);
   };
 
   return (
@@ -241,7 +241,7 @@ export const TimekeeperView: React.FC = () => {
             Pencatatan & Input Waktu Hasil (Timekeeper Station)
           </h1>
           <p className="text-xs text-slate-500">
-            Perekaman waktu finis, sentuhan touch-pad, dan verifikasi status DQ / DNS / DNF
+            Perekaman waktu finis resmi per lintasan (menit, detik, 1/100s) dan verifikasi status DQ / DNS / DNF
           </p>
         </div>
 
@@ -273,7 +273,7 @@ export const TimekeeperView: React.FC = () => {
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Heat {h.heatNumber}
+                  Seri {h.heatNumber}
                 </button>
               ))}
             </div>
@@ -284,22 +284,22 @@ export const TimekeeperView: React.FC = () => {
             className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors cursor-pointer"
           >
             <Save className="w-4 h-4" />
-            <span>Simpan Hasil Heat</span>
+            <span>Simpan Hasil Seri</span>
           </button>
         </div>
       </div>
 
-      {/* Multi-Lane Electronic Stopwatch / Manual Timer Simulator */}
+      {/* Multi-Lane Electronic Stopwatch / Manual Timer Station */}
       <div className="bg-slate-900 text-white rounded-2xl border border-slate-800 p-4 sm:p-5 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-1">
           <span className="text-[10px] font-bold uppercase tracking-wider text-sky-400 block">
-            Stopwatch Cadangan / Simulator Sentuhan Touchpad
+            Stopwatch Resmi Pengatur Waktu Perlombaan
           </span>
           <div className="text-3xl sm:text-4xl font-mono font-extrabold text-white tracking-wider tabular-nums">
             {formatMsToTime(stopwatchTimeMs, true)}
           </div>
           <span className="text-xs text-slate-400">
-            Aba-aba start resmi & perekaman sentuhan dinding per lintasan
+            Aba-aba start resmi & panduan pencatatan waktu perenang
           </span>
         </div>
 
@@ -337,7 +337,7 @@ export const TimekeeperView: React.FC = () => {
         <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-bold text-slate-900">
-              #{currentEvent.eventNumber}: {currentEvent.title} — Heat {selectedHeatNumber}
+              #{currentEvent.eventNumber}: {currentEvent.title} — Seri {selectedHeatNumber}
             </h2>
             <span className="text-xs text-slate-500">
               Rekor Kejuaraan: {currentEvent.meetRecord ? `${currentEvent.meetRecord.time} (${currentEvent.meetRecord.holder})` : 'Belum tercatat'}
@@ -360,11 +360,10 @@ export const TimekeeperView: React.FC = () => {
             <thead>
               <tr className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
                 <th className="py-3 px-4 w-16">Lintasan</th>
-                <th className="py-3 px-4">Nama Atlet & NIK</th>
+                <th className="py-3 px-4">Nama Atlet & No. Register</th>
                 <th className="py-3 px-4">Klub / Kontingen</th>
                 <th className="py-3 px-4 font-mono">Seed Time</th>
                 <th className="py-3 px-4 font-mono text-center w-56">Waktu Akhir (Menit : Detik . 1/100s)</th>
-                <th className="py-3 px-4">Touchpad Capture</th>
                 <th className="py-3 px-4">Status & Catatan Pelanggaran</th>
               </tr>
             </thead>
@@ -400,7 +399,9 @@ export const TimekeeperView: React.FC = () => {
                       {/* Swimmer Info */}
                       <td className="py-3.5 px-4">
                         <div className="font-semibold text-slate-900">{athlete?.name || 'Tanpa Atlet'}</div>
-                        <div className="font-mono text-[11px] text-slate-400">{athlete?.nik}</div>
+                        <div className="font-mono text-[11px] text-sky-700 font-semibold">
+                          {athlete?.regNumber || athlete?.nik || '-'}
+                        </div>
                       </td>
 
                       {/* Club */}
@@ -487,17 +488,6 @@ export const TimekeeperView: React.FC = () => {
                             </button>
                           )}
                         </div>
-                      </td>
-
-                      {/* Touch Pad Capture Button */}
-                      <td className="py-3.5 px-4">
-                        <button
-                          type="button"
-                          onClick={() => handleCaptureLaneTouch(lane.laneNumber)}
-                          className="px-2.5 py-1 text-xs font-semibold bg-sky-50 hover:bg-sky-100 text-sky-700 rounded-md border border-sky-200 transition-colors cursor-pointer"
-                        >
-                          Catat Sentuh
-                        </button>
                       </td>
 
                       {/* Status Selector & DQ Details */}

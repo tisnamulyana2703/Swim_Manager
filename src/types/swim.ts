@@ -15,13 +15,26 @@ export type Stroke =
   | 'RELAY_MEDLEY';
 
 export type AgeGroupCode = 
+  | 'AGE_6_UNDER' 
+  | 'AGE_7' 
+  | 'AGE_8' 
+  | 'AGE_9' 
+  | 'AGE_10' 
+  | 'AGE_11' 
+  | 'AGE_12' 
+  | 'AGE_13' 
+  | 'AGE_14' 
+  | 'AGE_15' 
+  | 'AGE_16_18' 
+  | 'AGE_19_ABOVE' 
+  | 'OPEN'
+  // Legacy aliases for backwards compatibility
   | 'SENIOR' 
   | 'KU_I' 
   | 'KU_II' 
   | 'KU_III' 
   | 'KU_IV' 
-  | 'KU_V' 
-  | 'OPEN';
+  | 'KU_V';
 
 export interface AgeGroupConfig {
   code: AgeGroupCode;
@@ -43,7 +56,8 @@ export interface Club {
 
 export interface Athlete {
   id: string;
-  nik: string;
+  regNumber?: string; // Nomor register otomatis sistem
+  nik?: string; // Optional legacy / identitas kependudukan
   name: string;
   gender: 'MALE' | 'FEMALE';
   birthDate: string; // YYYY-MM-DD

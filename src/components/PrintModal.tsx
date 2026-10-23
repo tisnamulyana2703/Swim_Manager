@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { useSwimData } from '../context/SwimDataContext';
-import { STROKE_LABELS, formatTimeDifference } from '../utils/timeUtils';
+import { STROKE_LABELS, formatTimeDifference, formatAgeGroupLabel } from '../utils/timeUtils';
 import { Printer, X, Download } from 'lucide-react';
 
 export const PrintModal: React.FC = () => {
@@ -167,9 +167,9 @@ export const PrintModal: React.FC = () => {
                             <tr>
                               <th className="py-1 px-2 w-10 text-center border-r">Lint</th>
                               <th className="py-1 px-2.5 border-r">Nama Perenang</th>
-                              <th className="py-1 px-2.5 border-r font-mono">NIK / ID</th>
+                              <th className="py-1 px-2.5 border-r font-mono">No. Register</th>
                               <th className="py-1 px-2.5 border-r">Klub / Kontingen</th>
-                              <th className="py-1 px-2.5 border-r">Kelompok Umur</th>
+                              <th className="py-1 px-2.5 border-r">Kelompok Usia</th>
                               <th className="py-1 px-2.5 font-mono text-right">Seed Time</th>
                             </tr>
                           </thead>
@@ -181,9 +181,9 @@ export const PrintModal: React.FC = () => {
                                 <tr key={lane.laneNumber}>
                                   <td className="py-1 px-2 text-center font-mono font-bold border-r">{lane.laneNumber}</td>
                                   <td className="py-1 px-2.5 font-semibold text-slate-900 border-r">{ath?.name || 'Tanpa Nama'}</td>
-                                  <td className="py-1 px-2.5 font-mono text-slate-500 border-r">{ath?.nik || '-'}</td>
+                                  <td className="py-1 px-2.5 font-mono text-slate-600 border-r">{ath?.regNumber || ath?.nik || '-'}</td>
                                   <td className="py-1 px-2.5 text-slate-700 border-r">{clb?.name || '-'} ({clb?.code || '-'})</td>
-                                  <td className="py-1 px-2.5 text-slate-600 border-r">{ath?.ageGroup?.replace('_', ' ') || '-'}</td>
+                                  <td className="py-1 px-2.5 text-slate-600 border-r">{formatAgeGroupLabel(ath?.ageGroup || '', ath?.age)}</td>
                                   <td className="py-1 px-2.5 font-mono font-bold text-right tabular-nums">{lane.seedTime}</td>
                                 </tr>
                               );
@@ -222,7 +222,7 @@ export const PrintModal: React.FC = () => {
               {targetEvent.heats.map(heat => (
                 <div key={heat.heatNumber} className="space-y-2">
                   <div className="bg-slate-100 px-3 py-1 text-xs font-bold text-slate-800 uppercase flex items-center justify-between">
-                    <span>Heat {heat.heatNumber} dari {targetEvent.heats.length}</span>
+                    <span>Seri {heat.heatNumber} dari {targetEvent.heats.length}</span>
                     <span className="font-mono text-[11px] text-slate-500">{heat.lanes.length} Perenang</span>
                   </div>
 
@@ -231,9 +231,9 @@ export const PrintModal: React.FC = () => {
                       <tr>
                         <th className="py-1.5 px-2 w-12 text-center border-r">Lint</th>
                         <th className="py-1.5 px-3 border-r">Nama Perenang</th>
-                        <th className="py-1.5 px-3 border-r font-mono">NIK / ID</th>
+                        <th className="py-1.5 px-3 border-r font-mono">No. Register</th>
                         <th className="py-1.5 px-3 border-r">Klub / Kontingen</th>
-                        <th className="py-1.5 px-3 border-r">Kelompok Umur</th>
+                        <th className="py-1.5 px-3 border-r">Kelompok Usia</th>
                         <th className="py-1.5 px-3 font-mono text-right">Seed Time</th>
                       </tr>
                     </thead>
@@ -245,9 +245,9 @@ export const PrintModal: React.FC = () => {
                           <tr key={lane.laneNumber}>
                             <td className="py-1.5 px-2 text-center font-mono font-bold border-r">{lane.laneNumber}</td>
                             <td className="py-1.5 px-3 font-semibold text-slate-900 border-r">{ath?.name}</td>
-                            <td className="py-1.5 px-3 font-mono text-slate-500 border-r">{ath?.nik}</td>
+                            <td className="py-1.5 px-3 font-mono text-slate-600 border-r">{ath?.regNumber || ath?.nik || '-'}</td>
                             <td className="py-1.5 px-3 text-slate-700 border-r">{clb?.name} ({clb?.code})</td>
-                            <td className="py-1.5 px-3 text-slate-600 border-r">{ath?.ageGroup.replace('_', ' ')}</td>
+                            <td className="py-1.5 px-3 text-slate-600 border-r">{formatAgeGroupLabel(ath?.ageGroup || '', ath?.age)}</td>
                             <td className="py-1.5 px-3 font-mono font-bold text-right tabular-nums">{lane.seedTime}</td>
                           </tr>
                         );
@@ -284,9 +284,9 @@ export const PrintModal: React.FC = () => {
                   <tr>
                     <th className="py-2 px-2 text-center border-r w-12">Peringkat</th>
                     <th className="py-2 px-3 border-r">Nama Perenang</th>
-                    <th className="py-2 px-3 border-r font-mono">NIK / ID</th>
+                    <th className="py-2 px-3 border-r font-mono">No. Register</th>
                     <th className="py-2 px-3 border-r">Klub / Kontingen</th>
-                    <th className="py-2 px-2 text-center border-r font-mono">H/L</th>
+                    <th className="py-2 px-2 text-center border-r font-mono">S/L</th>
                     <th className="py-2 px-3 text-right font-mono border-r">Waktu Finis</th>
                     <th className="py-2 px-3 text-right font-mono border-r">Selisih</th>
                     <th className="py-2 px-2 text-center font-mono border-r">Poin</th>
@@ -305,9 +305,9 @@ export const PrintModal: React.FC = () => {
                         <td className="py-2 px-3 font-semibold border-r">
                           {ath?.name} {lane.isNewRecord && '(REKOR)'}
                         </td>
-                        <td className="py-2 px-3 font-mono text-slate-500 border-r">{ath?.nik}</td>
+                        <td className="py-2 px-3 font-mono text-slate-600 border-r">{ath?.regNumber || ath?.nik || '-'}</td>
                         <td className="py-2 px-3 border-r">{clb?.name} ({clb?.code})</td>
-                        <td className="py-2 px-2 text-center font-mono border-r">H{lane.heatNumber}/L{lane.laneNumber}</td>
+                        <td className="py-2 px-2 text-center font-mono border-r">S{lane.heatNumber}/L{lane.laneNumber}</td>
                         <td className="py-2 px-3 font-mono font-bold text-right border-r tabular-nums">
                           {lane.finalTime || '-'}
                         </td>

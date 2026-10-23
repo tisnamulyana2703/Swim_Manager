@@ -15,6 +15,9 @@ import { ResultsView } from './components/ResultsView';
 import { OfficialMinutesView } from './components/OfficialMinutesView';
 import { PublicBoardView } from './components/PublicBoardView';
 import { SettingsView } from './components/SettingsView';
+import { EntryListView } from './components/EntryListView';
+import { NomorListView } from './components/NomorListView';
+import { BukuAcaraView } from './components/BukuAcaraView';
 import { PrintModal } from './components/PrintModal';
 
 const MainContent: React.FC = () => {
@@ -28,12 +31,15 @@ const MainContent: React.FC = () => {
         {activeTab === 'dashboard' && <DashboardView />}
         {activeTab === 'athletes' && <AthletesView />}
         {activeTab === 'events' && <EventsView />}
+        {activeTab === 'entry_list' && <EntryListView />}
+        {activeTab === 'nomor_list' && <NomorListView />}
         {activeTab === 'seeding' && <SeedingView />}
         {activeTab === 'timekeeper' && <TimekeeperView />}
         {activeTab === 'results' && <ResultsView />}
-        {activeTab === 'minutes' && <OfficialMinutesView />}
+        {activeTab === 'buku_acara' && <BukuAcaraView />}
         {activeTab === 'scoreboard' && <PublicBoardView />}
         {activeTab === 'settings' && <SettingsView />}
+        {activeTab === 'minutes' && <OfficialMinutesView />}
       </main>
 
       <footer className="border-t border-slate-200 bg-white py-6 text-xs text-slate-500">

@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { useSwimData } from '../context/SwimDataContext';
 import { getLaneOrder, getDefaultLaneColor } from '../utils/seeding';
+import { formatAgeGroupLabel } from '../utils/timeUtils';
 import { 
   Sliders, 
   RotateCcw, 
@@ -73,10 +74,10 @@ export const SeedingView: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900">
-            Pengaturan Lintasan & Heat (Auto-Seeding)
+            Starting List & Pengaturan Seri (Auto-Seeding)
           </h1>
           <p className="text-xs text-slate-500">
-            Pola Alokasi Spearhead (Pusat-ke-Luar: 4-5-3-6-2-7-1-8) Standar World Aquatics / PRSI
+            Pola Alokasi Spearhead (Pusat-ke-Luar: 4-5-3-6-2-7-1-8) Standar World Aquatics & Akuatik Indonesia
           </p>
         </div>
 
@@ -91,7 +92,7 @@ export const SeedingView: React.FC = () => {
           >
             {events.map(ev => (
               <option key={ev.id} value={ev.id}>
-                #{ev.eventNumber}: {ev.title} ({ev.heats.length} Heat)
+                #{ev.eventNumber}: {ev.title} ({ev.heats.length} Seri)
               </option>
             ))}
           </select>
@@ -149,12 +150,12 @@ export const SeedingView: React.FC = () => {
               <span aria-hidden="true">·</span>
               <span>{currentEvent.round.replace('_', ' ')}</span>
               <span aria-hidden="true">·</span>
-              <span>Total {totalHeats} Heat</span>
+              <span>Total {totalHeats} Seri</span>
             </div>
           </div>
         </div>
 
-        {/* Heat Pagination */}
+        {/* Seri Pagination */}
         {totalHeats > 0 && (
           <div className="flex items-center gap-2">
             <button
@@ -176,7 +177,7 @@ export const SeedingView: React.FC = () => {
                       : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
-                  Heat {h.heatNumber}
+                  Seri {h.heatNumber}
                 </button>
               ))}
             </div>
@@ -197,7 +198,7 @@ export const SeedingView: React.FC = () => {
         <div className="flex items-center justify-between border-b border-slate-800 pb-3">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold uppercase tracking-wider text-sky-400">
-              Visualisasi Kolam Renang: Heat {selectedHeatNumber} dari {totalHeats || 1}
+              Visualisasi Kolam Renang: Seri {selectedHeatNumber} dari {totalHeats || 1}
             </span>
             <span className="text-[11px] text-slate-400">
               ({championship.poolLanes} Lintasan, Panjang {championship.poolLength})
@@ -278,8 +279,8 @@ export const SeedingView: React.FC = () => {
                       <div className="min-w-0">
                         <div className="font-bold text-sm text-white truncate flex items-center gap-2">
                           <span>{athlete.name}</span>
-                          <span className="text-[11px] font-normal text-slate-400 font-mono hidden md:inline">
-                            [{athlete.nik}]
+                          <span className="text-[11px] font-semibold text-sky-400 font-mono hidden md:inline">
+                            [{athlete.regNumber || athlete.nik}]
                           </span>
                           {laneDetail?.timekeeperName && (
                             <span className="text-[10px] text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded-sm border border-slate-700 font-normal hidden lg:inline">
@@ -292,7 +293,7 @@ export const SeedingView: React.FC = () => {
                           <span aria-hidden="true">·</span>
                           <span className="truncate">{club?.name}</span>
                           <span aria-hidden="true">·</span>
-                          <span>{athlete.ageGroup.replace('_', ' ')}</span>
+                          <span>{formatAgeGroupLabel(athlete.ageGroup, athlete.age)}</span>
                         </div>
                       </div>
 
@@ -305,7 +306,7 @@ export const SeedingView: React.FC = () => {
                     </div>
                   ) : (
                     <div className="text-xs italic text-slate-500">
-                      Lintasan Kosong (Tidak ada perenang yang dialokasikan pada heat ini)
+                      Lintasan Kosong (Tidak ada perenang yang dialokasikan pada seri ini)
                     </div>
                   )}
                 </div>
@@ -332,7 +333,7 @@ export const SeedingView: React.FC = () => {
         <div className="pt-2 border-t border-slate-800 flex items-start gap-2.5 text-xs text-slate-400">
           <Info className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
           <p>
-            <strong>Standar World Aquatics / PRSI:</strong> Perenang dengan catatan waktu terbaik ditempatkan di Lintasan 4 (Pusat), disusul Lintasan 5, 3, 6, 2, 7, 1, 8. Perenang paling lambat berlomba di heat pertama dan perenang tercepat berada di heat penutup (Final Heat).
+            <strong>Standar World Aquatics / PB Akuatik Indonesia:</strong> Perenang dengan catatan waktu terbaik ditempatkan di Lintasan 4 (Pusat), disusul Lintasan 5, 3, 6, 2, 7, 1, 8. Perenang paling lambat berlomba di seri pertama dan perenang tercepat berada di seri penutup (Final Seri).
           </p>
         </div>
       </div>
@@ -355,12 +356,12 @@ export const SeedingView: React.FC = () => {
 
             <form onSubmit={executeSwap} className="p-6 space-y-4">
               <p className="text-xs text-slate-600">
-                Pindahkan atau tukar atlet pada <strong>Heat {selectedHeatNumber}, Lintasan {fromLane}</strong> ke lintasan target:
+                Pindahkan atau tukar atlet pada <strong>Seri {selectedHeatNumber}, Lintasan {fromLane}</strong> ke lintasan target:
               </p>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Ke Heat #</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Ke Seri #</label>
                   <select
                     value={toHeat}
                     onChange={e => setToHeat(Number(e.target.value))}
@@ -368,7 +369,7 @@ export const SeedingView: React.FC = () => {
                   >
                     {currentEvent.heats.map(h => (
                       <option key={h.heatNumber} value={h.heatNumber}>
-                        Heat {h.heatNumber}
+                        Seri {h.heatNumber}
                       </option>
                     ))}
                   </select>

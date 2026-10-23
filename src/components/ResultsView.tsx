@@ -236,9 +236,9 @@ export const ResultsView: React.FC = () => {
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
                     <th className="py-3 px-4 w-16">Peringkat</th>
-                    <th className="py-3 px-4">Nama Perenang & NIK</th>
+                    <th className="py-3 px-4">Nama Perenang & No. Register</th>
                     <th className="py-3 px-4">Klub / Kontingen</th>
-                    <th className="py-3 px-4 font-mono text-center">Heat/Lint</th>
+                    <th className="py-3 px-4 font-mono text-center">Seri/Lint</th>
                     <th className="py-3 px-4 font-mono">Seed Time</th>
                     <th className="py-3 px-4 font-mono">Waktu Finis</th>
                     <th className="py-3 px-4 font-mono">Selisih</th>
@@ -283,7 +283,9 @@ export const ResultsView: React.FC = () => {
                                 </span>
                               )}
                             </div>
-                            <div className="font-mono text-[11px] text-slate-400">{ath?.nik}</div>
+                            <div className="font-mono text-[11px] text-sky-700 font-medium">
+                              {ath?.regNumber || ath?.nik || '-'}
+                            </div>
                           </td>
 
                           <td className="py-3.5 px-4">
@@ -292,7 +294,7 @@ export const ResultsView: React.FC = () => {
                           </td>
 
                           <td className="py-3.5 px-4 font-mono text-center text-slate-500 tabular-nums">
-                            H{lane.heatNumber} / L{lane.laneNumber}
+                            S{lane.heatNumber} / L{lane.laneNumber}
                           </td>
 
                           <td className="py-3.5 px-4 font-mono text-slate-500 tabular-nums">

@@ -28,7 +28,7 @@ import {
 } from '../data/sampleData';
 import { autoSeedEvent, manualLaneReassign } from '../utils/seeding';
 import { calculateBestSwimmers, calculateClubMedalTally, calculateEventResults } from '../utils/scoring';
-import { calculateAge, determineAgeGroup, parseTimeToMs } from '../utils/timeUtils';
+import { calculateAge, determineAgeGroup, generateRegisterNumber, parseTimeToMs } from '../utils/timeUtils';
 
 const STORAGE_KEY = 'swimrace_manager_state_v1';
 
@@ -36,12 +36,15 @@ export type ActiveTab =
   | 'dashboard' 
   | 'athletes' 
   | 'events' 
+  | 'entry_list'
+  | 'nomor_list'
   | 'seeding' 
   | 'timekeeper' 
   | 'results' 
-  | 'minutes' 
+  | 'buku_acara'
   | 'scoreboard'
-  | 'settings';
+  | 'settings'
+  | 'minutes';
 
 export type PrintDocumentType = 
   | 'start_list' 
@@ -80,7 +83,8 @@ interface SwimDataContextType {
   addClub: (club: Omit<Club, 'id'>) => void;
   deleteClub: (id: string) => void;
   addAthlete: (athleteData: {
-    nik: string;
+    nik?: string;
+    regNumber?: string;
     name: string;
     gender: 'MALE' | 'FEMALE';
     birthDate: string;
@@ -90,7 +94,8 @@ interface SwimDataContextType {
   updateAthlete: (id: string, updates: Partial<Athlete>) => void;
   deleteAthlete: (id: string) => void;
   importBulkAthletes: (newRows: {
-    nik: string;
+    nik?: string;
+    regNumber?: string;
     name: string;
     gender: 'MALE' | 'FEMALE';
     birthDate: string;
@@ -161,7 +166,11 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const [athletes, setAthletes] = useState<Athlete[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_athletes`);
-    return saved ? JSON.parse(saved) : INITIAL_ATHLETES;
+    const list: Athlete[] = saved ? JSON.parse(saved) : INITIAL_ATHLETES;
+    return list.map((a, idx) => ({
+      ...a,
+      regNumber: a.regNumber || generateRegisterNumber(a.name, idx + 1),
+    }));
   });
 
   const [events, setEvents] = useState<SwimEvent[]>(() => {
@@ -233,7 +242,8 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Athlete Operations
   const addAthlete = (data: {
-    nik: string;
+    nik?: string;
+    regNumber?: string;
     name: string;
     gender: 'MALE' | 'FEMALE';
     birthDate: string;
@@ -249,9 +259,12 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       seedTimeMs: parseTimeToMs(r.seedTime),
     }));
 
+    const regNumber = data.regNumber || generateRegisterNumber(data.name, athletes.length + 1);
+
     const newAthlete: Athlete = {
       id: `ath-${Date.now()}`,
-      nik: data.nik,
+      regNumber,
+      nik: data.nik || regNumber,
       name: data.name,
       gender: data.gender,
       birthDate: data.birthDate,
@@ -281,7 +294,8 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const importBulkAthletes = (newRows: {
-    nik: string;
+    nik?: string;
+    regNumber?: string;
     name: string;
     gender: 'MALE' | 'FEMALE';
     birthDate: string;
@@ -352,8 +366,13 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         });
       }
 
-      const cleanNik = row.nik ? row.nik.trim() : `317${Date.now()}${idx}`;
-      const existingIdx = currentAthletes.findIndex(a => a.nik === cleanNik);
+      const regNum = row.regNumber || generateRegisterNumber(row.name, currentAthletes.length + idx + 1);
+      const cleanNik = row.nik ? row.nik.trim() : regNum;
+      const existingIdx = currentAthletes.findIndex(a => 
+        (a.regNumber && a.regNumber.toUpperCase() === regNum.toUpperCase()) || 
+        (a.nik && a.nik === cleanNik) ||
+        (a.name.toLowerCase().trim() === row.name.toLowerCase().trim() && a.birthDate === birthDate)
+      );
 
       if (existingIdx !== -1) {
         const existing = currentAthletes[existingIdx];
@@ -366,6 +385,7 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         currentAthletes[existingIdx] = {
           ...existing,
+          regNumber: existing.regNumber || regNum,
           name: row.name.trim(),
           gender: row.gender,
           birthDate,
@@ -377,6 +397,7 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       } else {
         const newAth: Athlete = {
           id: `ath-${Date.now()}-${idx}`,
+          regNumber: regNum,
           nik: cleanNik,
           name: row.name.trim(),
           gender: row.gender,

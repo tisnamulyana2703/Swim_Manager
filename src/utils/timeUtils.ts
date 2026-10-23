@@ -6,14 +6,79 @@
 import { AgeGroupCode, AgeGroupConfig, DQViolation, Stroke } from '../types/swim';
 
 export const AGE_GROUPS: AgeGroupConfig[] = [
-  { code: 'OPEN', name: 'Terbuka / Umum (Open)', minAge: 0, maxAge: 99, description: 'Kategori Terbuka Tanpa Batasan Umur' },
-  { code: 'SENIOR', name: 'Senior (19+ Tahun)', minAge: 19, maxAge: 99, description: 'Atlet Usia 19 Tahun ke Atas' },
-  { code: 'KU_I', name: 'KU I (16-18 Tahun)', minAge: 16, maxAge: 18, description: 'Kelompok Umur I' },
-  { code: 'KU_II', name: 'KU II (14-15 Tahun)', minAge: 14, maxAge: 15, description: 'Kelompok Umur II' },
-  { code: 'KU_III', name: 'KU III (12-13 Tahun)', minAge: 12, maxAge: 13, description: 'Kelompok Umur III' },
-  { code: 'KU_IV', name: 'KU IV (10-11 Tahun)', minAge: 10, maxAge: 11, description: 'Kelompok Umur IV' },
-  { code: 'KU_V', name: 'KU V (≤9 Tahun)', minAge: 0, maxAge: 9, description: 'Kelompok Umur V Pemula' },
+  { code: 'OPEN', name: 'Terbuka / Semua Usia (Open)', minAge: 0, maxAge: 99, description: 'Kategori Terbuka Tanpa Batasan Usia' },
+  { code: 'AGE_19_ABOVE', name: 'Usia 19+ Tahun (Senior)', minAge: 19, maxAge: 99, description: 'Atlet Usia 19 Tahun ke Atas' },
+  { code: 'AGE_16_18', name: 'Usia 16-18 Tahun (Taruna)', minAge: 16, maxAge: 18, description: 'Kelompok Usia 16 s/d 18 Tahun' },
+  { code: 'AGE_15', name: 'Usia 15 Tahun', minAge: 15, maxAge: 15, description: 'Kelompok Usia Tepat 15 Tahun' },
+  { code: 'AGE_14', name: 'Usia 14 Tahun', minAge: 14, maxAge: 14, description: 'Kelompok Usia Tepat 14 Tahun' },
+  { code: 'AGE_13', name: 'Usia 13 Tahun', minAge: 13, maxAge: 13, description: 'Kelompok Usia Tepat 13 Tahun' },
+  { code: 'AGE_12', name: 'Usia 12 Tahun', minAge: 12, maxAge: 12, description: 'Kelompok Usia Tepat 12 Tahun' },
+  { code: 'AGE_11', name: 'Usia 11 Tahun', minAge: 11, maxAge: 11, description: 'Kelompok Usia Tepat 11 Tahun' },
+  { code: 'AGE_10', name: 'Usia 10 Tahun', minAge: 10, maxAge: 10, description: 'Kelompok Usia Tepat 10 Tahun' },
+  { code: 'AGE_9', name: 'Usia 9 Tahun', minAge: 9, maxAge: 9, description: 'Kelompok Usia Tepat 9 Tahun' },
+  { code: 'AGE_8', name: 'Usia 8 Tahun', minAge: 8, maxAge: 8, description: 'Kelompok Usia Tepat 8 Tahun' },
+  { code: 'AGE_7', name: 'Usia 7 Tahun', minAge: 7, maxAge: 7, description: 'Kelompok Usia Tepat 7 Tahun' },
+  { code: 'AGE_6_UNDER', name: 'Usia ≤6 Tahun (Pemula)', minAge: 0, maxAge: 6, description: 'Kelompok Usia 6 Tahun dan di Bawahnya' },
+  // Backwards compatibility aliases
+  { code: 'SENIOR', name: 'Usia 19+ Tahun', minAge: 19, maxAge: 99, description: 'Senior' },
+  { code: 'KU_I', name: 'Usia 16-18 Tahun', minAge: 16, maxAge: 18, description: 'KU I' },
+  { code: 'KU_II', name: 'Usia 14-15 Tahun', minAge: 14, maxAge: 15, description: 'KU II' },
+  { code: 'KU_III', name: 'Usia 12-13 Tahun', minAge: 12, maxAge: 13, description: 'KU III' },
+  { code: 'KU_IV', name: 'Usia 10-11 Tahun', minAge: 10, maxAge: 11, description: 'KU IV' },
+  { code: 'KU_V', name: 'Usia ≤9 Tahun', minAge: 0, maxAge: 9, description: 'KU V' },
 ];
+
+/**
+ * Format label kelompok usia
+ */
+export function formatAgeGroupLabel(code: string, age?: number): string {
+  switch (code) {
+    case 'AGE_6_UNDER': return 'Usia ≤6 Thn';
+    case 'AGE_7': return 'Usia 7 Thn';
+    case 'AGE_8': return 'Usia 8 Thn';
+    case 'AGE_9': return 'Usia 9 Thn';
+    case 'AGE_10': return 'Usia 10 Thn';
+    case 'AGE_11': return 'Usia 11 Thn';
+    case 'AGE_12': return 'Usia 12 Thn';
+    case 'AGE_13': return 'Usia 13 Thn';
+    case 'AGE_14': return 'Usia 14 Thn';
+    case 'AGE_15': return 'Usia 15 Thn';
+    case 'AGE_16_18': return 'Usia 16-18 Thn';
+    case 'AGE_19_ABOVE': return 'Usia 19+ Thn';
+    case 'OPEN': return 'Terbuka';
+    case 'KU_I': return 'Usia 16-18 Thn';
+    case 'KU_II': return 'Usia 14-15 Thn';
+    case 'KU_III': return 'Usia 12-13 Thn';
+    case 'KU_IV': return 'Usia 10-11 Thn';
+    case 'KU_V': return 'Usia ≤9 Thn';
+    case 'SENIOR': return 'Usia 19+ Thn';
+    default:
+      if (age !== undefined && age > 0) return `Usia ${age} Thn`;
+      return code ? code.replace(/_/g, ' ') : '-';
+  }
+}
+
+/**
+ * Generate unique Register Number automatically based on athlete name
+ * e.g. "I Gede Siman Sudartawa" -> "REG-SIM-184"
+ */
+export function generateRegisterNumber(athleteName: string, salt = 0): string {
+  const clean = (athleteName || 'ATLET')
+    .toUpperCase()
+    .replace(/[^A-Z]/g, '');
+  
+  // Pick meaningful 3-letter prefix (from last name or first name)
+  const parts = (athleteName || 'SWM').trim().split(/\s+/).filter(Boolean);
+  const mainPart = parts.length > 1 ? parts[parts.length - 1] : parts[0] || 'SWM';
+  const cleanPrefix = mainPart.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 3).padEnd(3, 'X');
+
+  let hash = salt;
+  for (let i = 0; i < clean.length; i++) {
+    hash = (hash * 31 + clean.charCodeAt(i)) % 900;
+  }
+  const num = (Math.abs(hash) % 900) + 100;
+  return `REG-${cleanPrefix}-${num}`;
+}
 
 /**
  * Calculate age based on birth date and cutoff date (typically 31 Dec of competition year)
@@ -31,15 +96,21 @@ export function calculateAge(birthDateStr: string, cutoffDateStr: string): numbe
 }
 
 /**
- * Determine Kelompok Umur (Age Group) code automatically based on calculated age
+ * Determine Kelompok Umur (Age Group) code automatically based on calculated age (per usia)
  */
 export function determineAgeGroup(age: number): AgeGroupCode {
-  if (age >= 19) return 'SENIOR';
-  if (age >= 16) return 'KU_I';
-  if (age >= 14) return 'KU_II';
-  if (age >= 12) return 'KU_III';
-  if (age >= 10) return 'KU_IV';
-  return 'KU_V';
+  if (age >= 19) return 'AGE_19_ABOVE';
+  if (age >= 16) return 'AGE_16_18';
+  if (age === 15) return 'AGE_15';
+  if (age === 14) return 'AGE_14';
+  if (age === 13) return 'AGE_13';
+  if (age === 12) return 'AGE_12';
+  if (age === 11) return 'AGE_11';
+  if (age === 10) return 'AGE_10';
+  if (age === 9) return 'AGE_9';
+  if (age === 8) return 'AGE_8';
+  if (age === 7) return 'AGE_7';
+  return 'AGE_6_UNDER';
 }
 
 /**

@@ -6,7 +6,7 @@
 import React, { useState, useMemo } from 'react';
 import { useSwimData } from '../context/SwimDataContext';
 import { Athlete, AgeGroupCode } from '../types/swim';
-import { calculateAge, determineAgeGroup, parseTimeToMs } from '../utils/timeUtils';
+import { calculateAge, determineAgeGroup, parseTimeToMs, generateRegisterNumber, formatAgeGroupLabel } from '../utils/timeUtils';
 import { 
   Plus, 
   Search, 
@@ -45,6 +45,7 @@ export const AthletesView: React.FC = () => {
   const [showExcelModal, setShowExcelModal] = useState(false);
   const [editingAthleteId, setEditingAthleteId] = useState<string | null>(null);
   const [athName, setAthName] = useState('');
+  const [athRegNumber, setAthRegNumber] = useState('');
   const [athNik, setAthNik] = useState('');
   const [athGender, setAthGender] = useState<'MALE' | 'FEMALE'>('MALE');
   const [athBirthDate, setAthBirthDate] = useState('2011-05-15');
@@ -72,9 +73,23 @@ export const AthletesView: React.FC = () => {
   // Filtered Athletes
   const filteredAthletes = useMemo(() => {
     return athletes.filter(ath => {
-      const matchSearch = ath.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          ath.nik.includes(searchQuery);
-      const matchKU = filterKU === 'ALL' || ath.ageGroup === filterKU;
+      const q = searchQuery.toLowerCase();
+      const matchSearch = ath.name.toLowerCase().includes(q) || 
+                          (ath.regNumber && ath.regNumber.toLowerCase().includes(q)) ||
+                          (ath.nik && ath.nik.includes(q));
+
+      let matchKU = filterKU === 'ALL';
+      if (!matchKU) {
+        if (ath.ageGroup === filterKU) {
+          matchKU = true;
+        } else if (filterKU.startsWith('AGE_')) {
+          const targetAge = parseInt(filterKU.replace('AGE_', ''), 10);
+          if (!isNaN(targetAge) && ath.age === targetAge) {
+            matchKU = true;
+          }
+        }
+      }
+
       const matchGender = filterGender === 'ALL' || ath.gender === filterGender;
       const matchClub = filterClub === 'ALL' || ath.clubId === filterClub;
 
@@ -85,7 +100,8 @@ export const AthletesView: React.FC = () => {
   const handleOpenAddAthlete = () => {
     setEditingAthleteId(null);
     setAthName('');
-    setAthNik(`317${Math.floor(1000000000000 + Math.random() * 9000000000000)}`);
+    setAthRegNumber('');
+    setAthNik('');
     setAthGender('MALE');
     setAthBirthDate('2011-05-15');
     setAthClubId(clubs[0]?.id || '');
@@ -96,7 +112,8 @@ export const AthletesView: React.FC = () => {
   const handleOpenEditAthlete = (ath: Athlete) => {
     setEditingAthleteId(ath.id);
     setAthName(ath.name);
-    setAthNik(ath.nik);
+    setAthRegNumber(ath.regNumber || generateRegisterNumber(ath.name));
+    setAthNik(ath.nik || '');
     setAthGender(ath.gender);
     setAthBirthDate(ath.birthDate);
     setAthClubId(ath.clubId);
@@ -108,10 +125,13 @@ export const AthletesView: React.FC = () => {
     e.preventDefault();
     if (!athName.trim() || !athClubId) return;
 
+    const finalRegNumber = athRegNumber.trim() || generateRegisterNumber(athName, athletes.length + 1);
+
     if (editingAthleteId) {
       updateAthlete(editingAthleteId, {
         name: athName,
-        nik: athNik,
+        regNumber: finalRegNumber,
+        nik: athNik || finalRegNumber,
         gender: athGender,
         birthDate: athBirthDate,
         clubId: athClubId,
@@ -124,7 +144,8 @@ export const AthletesView: React.FC = () => {
     } else {
       addAthlete({
         name: athName,
-        nik: athNik,
+        regNumber: finalRegNumber,
+        nik: athNik || finalRegNumber,
         gender: athGender,
         birthDate: athBirthDate,
         clubId: athClubId,
@@ -241,7 +262,7 @@ export const AthletesView: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Cari nama atlet atau NIK..."
+                placeholder="Cari nama atlet atau No. Register..."
                 className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-sky-500 focus:bg-white"
               />
             </div>
@@ -252,13 +273,20 @@ export const AthletesView: React.FC = () => {
                 onChange={e => setFilterKU(e.target.value)}
                 className="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden"
               >
-                <option value="ALL">Semua Kelompok Umur</option>
-                <option value="SENIOR">Senior (19+ Thn)</option>
-                <option value="KU_I">KU I (16-18 Thn)</option>
-                <option value="KU_II">KU II (14-15 Thn)</option>
-                <option value="KU_III">KU III (12-13 Thn)</option>
-                <option value="KU_IV">KU IV (10-11 Thn)</option>
-                <option value="KU_V">KU V (≤9 Thn)</option>
+                <option value="ALL">Semua Kelompok Usia</option>
+                <option value="AGE_6_UNDER">Usia ≤6 Tahun</option>
+                <option value="AGE_7">Usia 7 Tahun</option>
+                <option value="AGE_8">Usia 8 Tahun</option>
+                <option value="AGE_9">Usia 9 Tahun</option>
+                <option value="AGE_10">Usia 10 Tahun</option>
+                <option value="AGE_11">Usia 11 Tahun</option>
+                <option value="AGE_12">Usia 12 Tahun</option>
+                <option value="AGE_13">Usia 13 Tahun</option>
+                <option value="AGE_14">Usia 14 Tahun</option>
+                <option value="AGE_15">Usia 15 Tahun</option>
+                <option value="AGE_16_18">Usia 16-18 Tahun</option>
+                <option value="AGE_19_ABOVE">Usia 19+ Tahun (Senior)</option>
+                <option value="OPEN">Terbuka (Open)</option>
               </select>
 
               <select
@@ -291,10 +319,10 @@ export const AthletesView: React.FC = () => {
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
                     <th className="py-3 px-4">No.</th>
-                    <th className="py-3 px-4">Nama Lengkap & NIK</th>
+                    <th className="py-3 px-4">Nama Lengkap & No. Register</th>
                     <th className="py-3 px-4">Gender</th>
                     <th className="py-3 px-4">Tgl Lahir / Usia</th>
-                    <th className="py-3 px-4">Kelompok Umur</th>
+                    <th className="py-3 px-4">Kelompok Usia</th>
                     <th className="py-3 px-4">Asal Klub</th>
                     <th className="py-3 px-4">Nomor Lomba Terdaftar</th>
                     <th className="py-3 px-4 text-right">Aksi</th>
@@ -315,7 +343,9 @@ export const AthletesView: React.FC = () => {
                           <td className="py-3 px-4 font-mono text-slate-400">{idx + 1}</td>
                           <td className="py-3 px-4">
                             <div className="font-semibold text-slate-900">{ath.name}</div>
-                            <div className="font-mono text-[11px] text-slate-400">{ath.nik}</div>
+                            <div className="font-mono text-[11px] text-sky-700 font-semibold">
+                              {ath.regNumber || ath.nik}
+                            </div>
                           </td>
                           <td className="py-3 px-4">
                             <span className={ath.gender === 'MALE' ? 'text-sky-700 font-medium' : 'text-pink-700 font-medium'}>
@@ -326,7 +356,7 @@ export const AthletesView: React.FC = () => {
                             {ath.birthDate} ({ath.age} th)
                           </td>
                           <td className="py-3 px-4 font-semibold text-slate-700">
-                            {ath.ageGroup.replace('_', ' ')}
+                            {formatAgeGroupLabel(ath.ageGroup, ath.age)}
                           </td>
                           <td className="py-3 px-4">
                             <span className="font-medium text-slate-800">{club?.code || '-'}</span>
@@ -464,16 +494,19 @@ export const AthletesView: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Nomor Induk Kependudukan (NIK) / ID Atlet *
+                    Nomor Register Atlet (Sistem Otomatis)
                   </label>
-                  <input
-                    type="text"
-                    required
-                    value={athNik}
-                    onChange={e => setAthNik(e.target.value)}
-                    placeholder="16 digit NIK"
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-hidden focus:border-sky-500 font-mono"
-                  />
+                  <div className="flex items-center gap-2">
+                    <div className="w-full px-3 py-2 text-xs bg-slate-100 border border-slate-200 rounded-lg font-mono font-bold text-sky-800">
+                      {athRegNumber || (athName.trim() ? generateRegisterNumber(athName, athletes.length + 1) : 'REG-XXX-###')}
+                    </div>
+                    <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-1 rounded border border-emerald-200 shrink-0">
+                      Otomatis
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 mt-1 block">
+                    Dibuat otomatis oleh sistem berdasarkan nama perenang
+                  </span>
                 </div>
 
                 <div>

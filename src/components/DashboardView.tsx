@@ -91,7 +91,7 @@ export const DashboardView: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white backdrop-blur-xs text-sm font-semibold rounded-lg border border-white/15 transition-colors cursor-pointer"
             >
               <Play className="w-4 h-4 text-emerald-400 fill-emerald-400" />
-              <span>Input Hasil Waktu Heat</span>
+              <span>Input Hasil Waktu Seri</span>
             </button>
 
             <button
@@ -150,13 +150,13 @@ export const DashboardView: React.FC = () => {
 
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-medium">Total Heat</span>
+            <span className="text-xs font-medium">Total Seri</span>
             <Clock className="w-4 h-4 text-amber-600" />
           </div>
           <div className="text-2xl font-bold text-slate-900 font-mono tabular-nums">
             {totalHeats}
           </div>
-          <span className="text-[11px] text-slate-400">Babak & Seri</span>
+          <span className="text-[11px] text-slate-400">Babak & Seri Terbentuk</span>
         </div>
 
         <div className="bg-white p-4 rounded-xl border border-slate-200">
@@ -220,7 +220,7 @@ export const DashboardView: React.FC = () => {
                         <span aria-hidden="true">·</span>
                         <span className="font-mono tabular-nums">{regCount} Atlet</span>
                         <span aria-hidden="true">·</span>
-                        <span className="font-mono tabular-nums">{event.heats.length} Heat</span>
+                        <span className="font-mono tabular-nums">{event.heats.length} Seri</span>
                       </div>
                     </div>
                   </div>

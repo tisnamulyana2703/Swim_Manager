@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { useSwimData } from '../context/SwimDataContext';
 import { AgeGroupCode, EventRound, Gender, Stroke, SwimEvent } from '../types/swim';
-import { STROKE_LABELS, parseTimeToMs } from '../utils/timeUtils';
+import { STROKE_LABELS, parseTimeToMs, formatAgeGroupLabel } from '../utils/timeUtils';
 import { 
   Plus, 
   Sliders, 
@@ -37,7 +37,7 @@ export const EventsView: React.FC = () => {
   const [distance, setDistance] = useState<number>(50);
   const [stroke, setStroke] = useState<Stroke>('FREESTYLE');
   const [gender, setGender] = useState<Gender>('MALE');
-  const [ageGroup, setAgeGroup] = useState<AgeGroupCode>('KU_II');
+  const [ageGroup, setAgeGroup] = useState<AgeGroupCode>('AGE_14');
   const [round, setRound] = useState<EventRound>('TIMED_FINAL');
   const [session, setSession] = useState<number>(1);
   const [recordTime, setRecordTime] = useState('00:26.50');
@@ -49,7 +49,7 @@ export const EventsView: React.FC = () => {
     e.preventDefault();
 
     const genderText = gender === 'MALE' ? 'Putra' : gender === 'FEMALE' ? 'Putri' : 'Mix';
-    const kuText = ageGroup.replace('_', ' ');
+    const kuText = formatAgeGroupLabel(ageGroup);
     const title = `${distance}m ${STROKE_LABELS[stroke]} ${genderText} ${kuText}`;
 
     addEvent({
@@ -125,8 +125,8 @@ export const EventsView: React.FC = () => {
                 <th className="py-3 px-4">No. Lomba</th>
                 <th className="py-3 px-4">Nama & Kategori Nomor Lomba</th>
                 <th className="py-3 px-4">Gaya & Jarak</th>
-                <th className="py-3 px-4">Kelompok Umur</th>
-                <th className="py-3 px-4 font-mono">Peserta / Heat</th>
+                <th className="py-3 px-4">Kelompok Usia</th>
+                <th className="py-3 px-4 font-mono">Peserta / Seri</th>
                 <th className="py-3 px-4">Rekor Kejuaraan</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4 text-right">Aksi & Operasi</th>
@@ -151,11 +151,11 @@ export const EventsView: React.FC = () => {
                       <span className="block text-[11px] text-slate-500 font-mono">{event.distance} Meter</span>
                     </td>
                     <td className="py-3.5 px-4 font-semibold text-slate-700">
-                      {event.ageGroup.replace('_', ' ')}
+                      {formatAgeGroupLabel(event.ageGroup)}
                     </td>
                     <td className="py-3.5 px-4 font-mono tabular-nums">
                       <span className="font-bold text-slate-900">{registeredCount}</span> atlet
-                      <span className="block text-[11px] text-slate-400">{event.heats.length} Heat</span>
+                      <span className="block text-[11px] text-slate-400">{event.heats.length} Seri</span>
                     </td>
                     <td className="py-3.5 px-4">
                       {event.meetRecord ? (
@@ -276,8 +276,9 @@ export const EventsView: React.FC = () => {
                   <select
                     value={distance}
                     onChange={e => setDistance(Number(e.target.value))}
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-hidden focus:border-sky-500"
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-hidden focus:border-sky-500 font-bold"
                   >
+                    <option value={25}>25 Meter (Sprint Pemula / KU Usia Dini)</option>
                     <option value={50}>50 Meter</option>
                     <option value={100}>100 Meter</option>
                     <option value={200}>200 Meter</option>
@@ -323,19 +324,25 @@ export const EventsView: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Kelompok Umur (KU) *
+                    Kelompok Usia (Per Usia) *
                   </label>
                   <select
                     value={ageGroup}
                     onChange={e => setAgeGroup(e.target.value as AgeGroupCode)}
                     className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-hidden focus:border-sky-500"
                   >
-                    <option value="SENIOR">Senior (19+ Tahun)</option>
-                    <option value="KU_I">KU I (16-18 Tahun)</option>
-                    <option value="KU_II">KU II (14-15 Tahun)</option>
-                    <option value="KU_III">KU III (12-13 Tahun)</option>
-                    <option value="KU_IV">KU IV (10-11 Tahun)</option>
-                    <option value="KU_V">KU V (≤9 Tahun)</option>
+                    <option value="AGE_6_UNDER">Usia ≤6 Tahun</option>
+                    <option value="AGE_7">Usia 7 Tahun</option>
+                    <option value="AGE_8">Usia 8 Tahun</option>
+                    <option value="AGE_9">Usia 9 Tahun</option>
+                    <option value="AGE_10">Usia 10 Tahun</option>
+                    <option value="AGE_11">Usia 11 Tahun</option>
+                    <option value="AGE_12">Usia 12 Tahun</option>
+                    <option value="AGE_13">Usia 13 Tahun</option>
+                    <option value="AGE_14">Usia 14 Tahun</option>
+                    <option value="AGE_15">Usia 15 Tahun</option>
+                    <option value="AGE_16_18">Usia 16-18 Tahun</option>
+                    <option value="AGE_19_ABOVE">Usia 19+ Tahun (Senior)</option>
                     <option value="OPEN">Terbuka / Umum (Open)</option>
                   </select>
                 </div>
@@ -350,7 +357,7 @@ export const EventsView: React.FC = () => {
                     className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-hidden focus:border-sky-500"
                   >
                     <option value="TIMED_FINAL">Final Berdasarkan Waktu (Timed Final)</option>
-                    <option value="PRELIM">Babak Penyisihan (Prelims / Heats)</option>
+                    <option value="PRELIM">Babak Penyisihan (Prelims / Seri)</option>
                     <option value="FINAL">Babak Final</option>
                   </select>
                 </div>
