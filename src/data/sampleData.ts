@@ -549,7 +549,7 @@ export const INITIAL_ATHLETES: Athlete[] = [
     age: 13,
     ageGroup: 'KU_III',
     registeredEvents: [
-      { eventId: 'evt-104', seedTime: 'NT', seedTimeMs: 0 },
+      { eventId: 'evt-none', seedTime: 'NT', seedTimeMs: 0 },
     ],
   },
   {
@@ -575,7 +575,7 @@ export const INITIAL_ATHLETES: Athlete[] = [
     age: 14,
     ageGroup: 'KU_II',
     registeredEvents: [
-      { eventId: 'evt-100', seedTime: 'NT', seedTimeMs: 0 },
+      { eventId: 'evt-none', seedTime: 'NT', seedTimeMs: 0 },
       { eventId: 'evt-101', seedTime: 'NT', seedTimeMs: 0 },
       { eventId: 'evt-103', seedTime: 'NT', seedTimeMs: 0 },
       { eventId: 'evt-105', seedTime: 'NT', seedTimeMs: 0 },
@@ -591,7 +591,7 @@ export const INITIAL_ATHLETES: Athlete[] = [
     age: 7,
     ageGroup: 'AGE_7',
     registeredEvents: [
-      { eventId: 'evt-100', seedTime: 'NT', seedTimeMs: 0 },
+      { eventId: 'evt-none', seedTime: 'NT', seedTimeMs: 0 },
     ],
   },
   {
@@ -604,7 +604,7 @@ export const INITIAL_ATHLETES: Athlete[] = [
     age: 8,
     ageGroup: 'AGE_8',
     registeredEvents: [
-      { eventId: 'evt-100', seedTime: 'NT', seedTimeMs: 0 },
+      { eventId: 'evt-none', seedTime: 'NT', seedTimeMs: 0 },
     ],
   },
   {

@@ -32,7 +32,6 @@ export const PrintModal: React.FC = () => {
   const [contactEmail, setContactEmail] = useState<string>('Lembangswimmingclub0909@Gmail.Com');
   const [contactPhone, setContactPhone] = useState<string>('0857-9411-2141');
   const [showEditContact, setShowEditContact] = useState<boolean>(false);
-  const [showClubRecapTable, setShowClubRecapTable] = useState<boolean>(true);
 
   const clubMap = useMemo(() => new Map(clubs.map(c => [c.id, c])), [clubs]);
   const eventMap = useMemo(() => new Map(events.map(e => [e.id, e])), [events]);
@@ -422,7 +421,7 @@ export const PrintModal: React.FC = () => {
                     onChange={(e) => setSelectedClubId(e.target.value)}
                     className="bg-slate-700 text-white rounded px-2 py-0.5 text-xs font-semibold focus:outline-hidden"
                   >
-                    <option value="ALL">Semua Perkumpulan ({clubEntryStats.grandTotals.totalNomorLomba} nomor lomba)</option>
+                    <option value="ALL">Semua Club ({clubEntryStats.grandTotals.totalNomorLomba} nomor lomba)</option>
                     {clubs.map(c => {
                       const stat = clubEntryStats.map.get(c.id);
                       const totalNomor = stat ? stat.totalNomorLomba : 0;
@@ -444,15 +443,6 @@ export const PrintModal: React.FC = () => {
                   </span>
                 </div>
 
-                <label className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs rounded-lg cursor-pointer transition-colors select-none">
-                  <input
-                    type="checkbox"
-                    checked={showClubRecapTable}
-                    onChange={(e) => setShowClubRecapTable(e.target.checked)}
-                    className="rounded text-sky-500 focus:ring-0 w-3.5 h-3.5"
-                  />
-                  <span>Tabel Rekap Klub</span>
-                </label>
 
                 <button
                   type="button"
@@ -591,13 +581,13 @@ export const PrintModal: React.FC = () => {
 
               {/* Official Information Banner: Club & Total Nomor Lomba */}
               {selectedClubId !== 'ALL' ? (
-                <div className="border border-black bg-slate-50 px-3 py-2 text-black text-xs flex flex-wrap items-center justify-between gap-2 print:bg-transparent">
+                <div className="border border-black bg-white px-3 py-2 text-black text-xs flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <span className="font-bold text-red-600">PERKUMPULAN:</span>{' '}
-                    <span className="font-extrabold uppercase tracking-wide">
+                    <span className="font-bold text-red-600">CLUB:</span>{' '}
+                    <span className="font-bold uppercase tracking-wide">
                       {clubMap.get(selectedClubId)?.name || 'KLUB RENANG'}
                     </span>{' '}
-                    <span className="text-[11px] text-slate-600 font-mono">({clubMap.get(selectedClubId)?.code})</span>
+                    <span className="text-[11px] text-slate-500 font-mono">({clubMap.get(selectedClubId)?.code})</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
                     <div>
@@ -606,9 +596,9 @@ export const PrintModal: React.FC = () => {
                         ({clubEntryStats.map.get(selectedClubId)?.maleAthletes || 0} PA / {clubEntryStats.map.get(selectedClubId)?.femaleAthletes || 0} PI)
                       </span>
                     </div>
-                    <div className="border-l-2 border-red-600 pl-2.5 font-bold text-red-600">
+                    <div className="border-l border-red-600 pl-2.5 font-bold text-red-600">
                       TOTAL NOMOR LOMBA DIIKUTI:{' '}
-                      <span className="text-sm font-black text-red-600">
+                      <span className="text-xs font-bold text-red-600">
                         {clubEntryStats.map.get(selectedClubId)?.totalNomorLomba || 0}
                       </span>{' '}
                       NOMOR LOMBA
@@ -616,11 +606,11 @@ export const PrintModal: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className="border border-black bg-slate-50 px-3 py-2 text-black text-xs flex flex-wrap items-center justify-between gap-2 print:bg-transparent">
+                <div className="border border-black bg-white px-3 py-2 text-black text-xs flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <span className="font-bold text-red-600">DAFTAR ENTRI SELURUH PERKUMPULAN</span>{' '}
-                    <span className="text-[11px] text-slate-600">
-                      ({clubEntryStats.list.filter(c => c.totalAthletes > 0).length} Perkumpulan Terdaftar)
+                    <span className="font-bold text-red-600">DAFTAR ENTRI SELURUH ClUB</span>{' '}
+                    <span className="text-[11px] text-slate-500">
+                      ({clubEntryStats.list.filter(c => c.totalAthletes > 0).length} Club Terdaftar)
                     </span>
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
@@ -630,9 +620,9 @@ export const PrintModal: React.FC = () => {
                         ({clubEntryStats.grandTotals.maleAthletes} PA / {clubEntryStats.grandTotals.femaleAthletes} PI)
                       </span>
                     </div>
-                    <div className="border-l-2 border-red-600 pl-2.5 font-bold text-red-600">
+                    <div className="border-l border-red-600 pl-2.5 font-bold text-red-600">
                       TOTAL KESELURUHAN NOMOR LOMBA:{' '}
-                      <span className="text-sm font-black text-red-600">
+                      <span className="text-xs font-bold text-red-600">
                         {clubEntryStats.grandTotals.totalNomorLomba}
                       </span>{' '}
                       NOMOR LOMBA
@@ -659,7 +649,7 @@ export const PrintModal: React.FC = () => {
                         KU
                       </th>
                       <th className="border border-black px-2 py-1 text-left font-bold text-red-600">
-                        Perkumpulan
+                        Club
                       </th>
                       <th className="border border-black px-1 py-1 text-center font-bold text-red-600 whitespace-nowrap">
                         Tgl
@@ -696,7 +686,7 @@ export const PrintModal: React.FC = () => {
                           {isFirstOfClub && (
                             <tr className="bg-slate-100/90 border-t-2 border-b border-black font-bold">
                               <td colSpan={12} className="border border-black px-2.5 py-1.5 text-left text-black font-extrabold text-[11px]">
-                                <span className="text-red-600 uppercase">PERKUMPULAN:</span> {row.clubName} &nbsp;|&nbsp;{' '}
+                                <span className="text-red-600 uppercase">CLUB:</span> {row.clubName} &nbsp;|&nbsp;{' '}
                                 <span className="font-semibold text-slate-800">
                                   {clubStat?.totalAthletes || 0} Atlet ({clubStat?.maleAthletes || 0} PA / {clubStat?.femaleAthletes || 0} PI)
                                 </span>{' '}
@@ -765,7 +755,7 @@ export const PrintModal: React.FC = () => {
                     {entryListRows.length === 0 && (
                       <tr>
                         <td colSpan={12} className="border border-black py-8 text-center text-slate-500 italic">
-                          Tidak ada entri atlet yang terdaftar untuk perkumpulan ini.
+                          Tidak ada entri atlet yang terdaftar untuk club ini.
                         </td>
                       </tr>
                     )}
@@ -775,20 +765,20 @@ export const PrintModal: React.FC = () => {
                   {entryListRows.length > 0 && (
                     <tfoot>
                       {selectedClubId !== 'ALL' ? (
-                        <tr className="bg-slate-100 font-bold border-t-2 border-black text-black">
-                          <td colSpan={9} className="border border-black px-2.5 py-1.5 text-right font-extrabold text-black uppercase text-[11px]">
+                        <tr className="bg-white font-bold border-t border-black text-black">
+                          <td colSpan={9} className="border border-black px-2 py-1.5 text-center font-bold text-black uppercase text-[11px]">
                             JUMLAH TOTAL NOMOR LOMBA YANG DIIKUTI ({clubMap.get(selectedClubId)?.name || 'KLUB'}):
                           </td>
-                          <td colSpan={3} className="border border-black px-2 py-1.5 text-center font-black text-red-600 text-xs">
+                          <td colSpan={3} className="border border-black px-2 py-1.5 text-center font-bold text-red-600 text-[11px]">
                             {clubEntryStats.map.get(selectedClubId)?.totalNomorLomba || entryListRows.length} NOMOR LOMBA ({clubEntryStats.map.get(selectedClubId)?.totalAthletes || 0} ATLET)
                           </td>
                         </tr>
                       ) : (
-                        <tr className="bg-slate-200 font-bold border-t-2 border-black text-black">
-                          <td colSpan={9} className="border border-black px-2.5 py-1.5 text-right font-extrabold text-black uppercase text-[11px]">
-                            TOTAL KESELURUHAN NOMOR LOMBA SELURUH PERKUMPULAN:
+                        <tr className="bg-white font-bold border-t border-black text-black">
+                          <td colSpan={9} className="border border-black px-2 py-1.5 text-center font-bold text-black uppercase text-[11px]">
+                            JUMLAH TOTAL NOMOR LOMBA YANG DIIKUTI:
                           </td>
-                          <td colSpan={3} className="border border-black px-2 py-1.5 text-center font-black text-red-600 text-xs">
+                          <td colSpan={3} className="border border-black px-2 py-1.5 text-center font-bold text-red-600 text-[11px]">
                             {clubEntryStats.grandTotals.totalNomorLomba} NOMOR LOMBA ({clubEntryStats.grandTotals.totalAthletes} ATLET)
                           </td>
                         </tr>
@@ -799,10 +789,10 @@ export const PrintModal: React.FC = () => {
               </div>
 
               {/* Sub-summary count */}
-              <div className="flex flex-wrap justify-between items-center text-[10px] text-slate-600 pt-1 border-t border-slate-300 print:text-black gap-2">
+              <div className="flex flex-wrap justify-between items-center text-[10px] text-slate-500 pt-1.5 border-t border-slate-200 print:text-black gap-2">
                 <div>
                   Total:{' '}
-                  <span className="font-bold">
+                  <span className="font-bold text-slate-800">
                     {entryListRows.length} entri perlombaan
                   </span>
                   {' · '}
@@ -812,111 +802,10 @@ export const PrintModal: React.FC = () => {
                       : `${clubEntryStats.map.get(selectedClubId)?.totalNomorLomba || 0} nomor lomba diikuti oleh ${clubEntryStats.map.get(selectedClubId)?.totalAthletes || 0} atlet`}
                   </span>
                 </div>
-                <div>
+                <div className="text-slate-600">
                   Dicetak pada {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </div>
               </div>
-
-              {/* REKAPITULASI RESMI JUMLAH ATLET & TOTAL NOMOR LOMBA SETIAP PERKUMPULAN */}
-              {showClubRecapTable && (
-                <div className="pt-4 space-y-2 break-inside-avoid print:pt-4">
-                  <div className="border-b border-black pb-1.5 flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <h3 className="text-xs sm:text-sm font-bold text-black uppercase tracking-wider">
-                        REKAPITULASI JUMLAH ATLET &amp; TOTAL NOMOR LOMBA SETIAP PERKUMPULAN
-                      </h3>
-                      <p className="text-[10px] text-slate-600">
-                        Tabel resmi rekapitulasi partisipasi dan jumlah entri nomor lomba yang diikuti per perkumpulan / klub renang.
-                      </p>
-                    </div>
-                    <span className="text-[10.5px] font-bold px-2 py-0.5 bg-red-50 text-red-700 border border-red-300 rounded print:hidden">
-                      {clubEntryStats.list.filter(c => c.totalAthletes > 0).length} Perkumpulan Terdaftar
-                    </span>
-                  </div>
-
-                  <table className="w-full border-collapse border border-black text-black text-[10.5px] leading-tight print-recap-table">
-                    <thead>
-                      <tr className="bg-white border-b border-black">
-                        <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600 w-8">
-                          No.
-                        </th>
-                        <th className="border border-black px-2 py-1 text-left font-bold text-red-600">
-                          Nama Perkumpulan (Klub)
-                        </th>
-                        <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600 w-16">
-                          Kode
-                        </th>
-                        <th className="border border-black px-2 py-1 text-left font-bold text-red-600">
-                          Kota / Daerah
-                        </th>
-                        <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600 w-12">
-                          PA
-                        </th>
-                        <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600 w-12">
-                          PI
-                        </th>
-                        <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600 w-16">
-                          Total Atlet
-                        </th>
-                        <th className="border border-black px-2 py-1 text-center font-bold text-red-600 bg-red-50/40">
-                          Jumlah Total Nomor Lomba Diikuti
-                        </th>
-                        <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600 w-24">
-                          Rata-rata/Atlet
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {clubEntryStats.list.map((c, i) => {
-                        const isSelected = selectedClubId === c.clubId;
-                        const avg = c.totalAthletes > 0 ? (c.totalNomorLomba / c.totalAthletes).toFixed(1) : '0';
-                        return (
-                          <tr 
-                            key={c.clubId}
-                            className={`border-b border-black hover:bg-slate-50/60 ${
-                              isSelected ? 'bg-amber-100/70 font-semibold' : (i % 2 === 1 ? 'bg-slate-50/40' : 'bg-white')
-                            }`}
-                          >
-                            <td className="border border-black px-1.5 py-1 text-center">{i + 1}</td>
-                            <td className="border border-black px-2 py-1 text-left font-medium">
-                              {c.clubName} {isSelected && <span className="text-red-600 text-[10px] font-bold ml-1">(Dipilih)</span>}
-                            </td>
-                            <td className="border border-black px-1.5 py-1 text-center font-mono font-medium">{c.clubCode}</td>
-                            <td className="border border-black px-2 py-1 text-left text-slate-700">{c.city || '-'}</td>
-                            <td className="border border-black px-1.5 py-1 text-center">{c.maleAthletes}</td>
-                            <td className="border border-black px-1.5 py-1 text-center">{c.femaleAthletes}</td>
-                            <td className="border border-black px-1.5 py-1 text-center font-bold">{c.totalAthletes}</td>
-                            <td className="border border-black px-2 py-1 text-center font-extrabold text-red-600 text-[11px] bg-red-50/30">
-                              {c.totalNomorLomba} Nomor Lomba
-                            </td>
-                            <td className="border border-black px-1.5 py-1 text-center font-mono text-slate-700">{avg}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                    <tfoot>
-                      <tr className="bg-slate-200 font-extrabold border-t-2 border-black text-black">
-                        <td colSpan={4} className="border border-black px-2 py-1 text-right uppercase text-[11px]">
-                          TOTAL KESELURUHAN ({clubEntryStats.list.length} PERKUMPULAN):
-                        </td>
-                        <td className="border border-black px-1.5 py-1 text-center">{clubEntryStats.grandTotals.maleAthletes}</td>
-                        <td className="border border-black px-1.5 py-1 text-center">{clubEntryStats.grandTotals.femaleAthletes}</td>
-                        <td className="border border-black px-1.5 py-1 text-center text-black font-black">
-                          {clubEntryStats.grandTotals.totalAthletes}
-                        </td>
-                        <td className="border border-black px-2 py-1 text-center text-red-600 font-black text-xs">
-                          {clubEntryStats.grandTotals.totalNomorLomba} NOMOR LOMBA
-                        </td>
-                        <td className="border border-black px-1.5 py-1 text-center font-mono">
-                          {clubEntryStats.grandTotals.totalAthletes > 0 
-                            ? (clubEntryStats.grandTotals.totalNomorLomba / clubEntryStats.grandTotals.totalAthletes).toFixed(1) 
-                            : '0'}
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              )}
             </div>
           )}
 
@@ -1143,7 +1032,7 @@ export const PrintModal: React.FC = () => {
                 <thead className="bg-slate-100 border-b border-slate-300 font-bold text-slate-700 text-[11px]">
                   <tr>
                     <th className="py-2 px-2 text-center border-r w-12">Peringkat</th>
-                    <th className="py-2 px-3 border-r">Klub / Kontingen Perkumpulan</th>
+                    <th className="py-2 px-3 border-r">Klub / Kontingen Club</th>
                     <th className="py-2 px-2 text-center border-r">Daerah</th>
                     <th className="py-2 px-2 text-center border-r bg-amber-100/50">Emas</th>
                     <th className="py-2 px-2 text-center border-r bg-slate-200/50">Perak</th>
