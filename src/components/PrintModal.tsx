@@ -32,6 +32,7 @@ export const PrintModal: React.FC = () => {
   const [contactEmail, setContactEmail] = useState<string>('Lembangswimmingclub0909@Gmail.Com');
   const [contactPhone, setContactPhone] = useState<string>('0857-9411-2141');
   const [showEditContact, setShowEditContact] = useState<boolean>(false);
+  const [pageOrientation, setPageOrientation] = useState<'landscape' | 'portrait'>('landscape');
 
   const clubMap = useMemo(() => new Map(clubs.map(c => [c.id, c])), [clubs]);
   const eventMap = useMemo(() => new Map(events.map(e => [e.id, e])), [events]);
@@ -135,9 +136,10 @@ export const PrintModal: React.FC = () => {
     };
   }, [clubs, athletes]);
 
-  // Synchronize club selection on open
+  // Synchronize club selection and page orientation on open
   useEffect(() => {
     if (activePrintDoc === 'entry_list') {
+      setPageOrientation('landscape');
       if (printTargetClubId) {
         setSelectedClubId(printTargetClubId);
       } else {
@@ -148,6 +150,8 @@ export const PrintModal: React.FC = () => {
           setSelectedClubId(clubs[0].id);
         }
       }
+    } else {
+      setPageOrientation('portrait');
     }
   }, [activePrintDoc, printTargetClubId, clubs]);
 
@@ -353,8 +357,8 @@ export const PrintModal: React.FC = () => {
       <style>{`
         @media print {
           @page {
-            size: A4 portrait;
-            margin: 8mm 6mm;
+            size: ${pageOrientation === 'landscape' ? 'A4 landscape' : 'A4 portrait'};
+            margin: ${pageOrientation === 'landscape' ? '6mm 8mm' : '8mm 6mm'};
           }
           html, body {
             background: #ffffff !important;
@@ -362,12 +366,13 @@ export const PrintModal: React.FC = () => {
             margin: 0 !important;
             padding: 0 !important;
             width: 100% !important;
+            max-width: 100% !important;
             height: auto !important;
             overflow: visible !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          header, footer, nav, main, aside, .print\:hidden, [class*="print:hidden"] {
+          header, footer, nav, main, aside, .print\\:hidden, [class*="print:hidden"] {
             display: none !important;
           }
           #print-modal-root {
@@ -378,12 +383,14 @@ export const PrintModal: React.FC = () => {
             inset: auto !important;
             display: block !important;
             width: 100% !important;
+            max-width: 100% !important;
             overflow: visible !important;
           }
           .printable-content {
             padding: 0 !important;
             margin: 0 !important;
             width: 100% !important;
+            max-width: 100% !important;
             max-height: none !important;
             overflow: visible !important;
             box-shadow: none !important;
@@ -392,24 +399,46 @@ export const PrintModal: React.FC = () => {
           .print-entry-list-table {
             border-collapse: collapse !important;
             width: 100% !important;
+            max-width: 100% !important;
+            table-layout: fixed !important;
+            page-break-inside: auto !important;
+          }
+          .print-entry-list-table thead {
+            display: table-header-group !important;
+          }
+          .print-entry-list-table tfoot {
+            display: table-footer-group !important;
+          }
+          .print-entry-list-table tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
           .print-entry-list-table th {
             color: #dc2626 !important;
             font-weight: 700 !important;
             border: 1px solid #000000 !important;
+            background-color: #ffffff !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+            padding: 3.5px 2px !important;
+            font-size: 10.5px !important;
+            line-height: 1.15 !important;
           }
           .print-entry-list-table td {
             border: 1px solid #000000 !important;
             color: #000000 !important;
+            padding: 3px 3px !important;
+            font-size: 10.5px !important;
+            line-height: 1.2 !important;
           }
         }
       `}</style>
 
       {/* Container - wider for entry list table preview */}
       <div className={`bg-white rounded-2xl w-full shadow-2xl border border-slate-300 overflow-hidden my-4 max-h-[94vh] flex flex-col print:shadow-none print:border-none print:rounded-none print:my-0 print:mx-0 print:max-h-none print:max-w-none print:w-full print:overflow-visible print:bg-white ${
-        activePrintDoc === 'entry_list' ? 'max-w-6xl' : 'max-w-4xl'
+        activePrintDoc === 'entry_list' 
+          ? (pageOrientation === 'landscape' ? 'max-w-[96vw] xl:max-w-[1360px]' : 'max-w-5xl') 
+          : 'max-w-4xl'
       }`}>
         
         {/* Modal Top Action Bar (hidden in print) */}
@@ -421,12 +450,41 @@ export const PrintModal: React.FC = () => {
                 ? 'Pratinjau Cetak Entry List (Format Resmi PB Akuatik Indonesia)' 
                 : 'Pratinjau Cetak Dokumen Resmi (Format Standar A4)'}
             </span>
+            {activePrintDoc === 'entry_list' && (
+              <span className="hidden md:inline-flex items-center text-[10.5px] font-semibold bg-sky-950 border border-sky-600/60 text-sky-300 px-2 py-0.5 rounded-full">
+                A4 {pageOrientation === 'landscape' ? 'Lanskap (Pas Lebar Halaman)' : 'Potret'}
+              </span>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {/* Entry List Controls */}
             {activePrintDoc === 'entry_list' && (
               <>
+                {/* Orientation Selector */}
+                <div className="flex items-center bg-slate-800 rounded-lg p-0.5 text-xs border border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => setPageOrientation('landscape')}
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                      pageOrientation === 'landscape' ? 'bg-sky-500 text-white font-bold shadow-xs' : 'text-slate-300 hover:text-white'
+                    }`}
+                    title="Cetak format A4 Lanskap (Lebar Penuh)"
+                  >
+                    A4 Lanskap
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPageOrientation('portrait')}
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                      pageOrientation === 'portrait' ? 'bg-sky-500 text-white font-bold shadow-xs' : 'text-slate-300 hover:text-white'
+                    }`}
+                    title="Cetak format A4 Potret (Tegak)"
+                  >
+                    A4 Potret
+                  </button>
+                </div>
+
                 <div className="flex items-center gap-1.5 bg-slate-800 rounded-lg px-2.5 py-1 text-xs">
                   <span className="text-slate-400">Pilih Klub:</span>
                   <select
@@ -455,7 +513,6 @@ export const PrintModal: React.FC = () => {
                       : `${clubEntryStats.map.get(selectedClubId)?.totalNomorLomba || 0} Nomor`}
                   </span>
                 </div>
-
 
                 <button
                   type="button"
@@ -644,45 +701,74 @@ export const PrintModal: React.FC = () => {
                 </div>
               )}
 
+              {/* Screen tip for landscape printing */}
+              <div className="bg-sky-50 border border-sky-200 text-sky-900 px-3.5 py-2 rounded-lg text-xs flex flex-wrap items-center justify-between gap-2 print:hidden">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold uppercase tracking-wider text-[10px] bg-sky-200 text-sky-900 px-1.5 py-0.5 rounded">
+                    A4 LANSKAP (PAS LEBAR HALAMAN)
+                  </span>
+                  <span>
+                    Format cetak diatur ke <strong>A4 Landscape (297 × 210 mm)</strong> dengan skala disesuaikan penuh pada lebar halaman.
+                  </span>
+                </div>
+                <span className="text-[11px] text-sky-700">
+                  Saat dialog cetak browser muncul, pastikan orientasi <strong>Landscape</strong> &amp; Skala <strong>Sesuaikan / Pas Lebar</strong>.
+                </span>
+              </div>
+
               {/* Grid Table with Black Solid Borders and Red Bold Headers */}
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse border border-black text-black text-[10.5px] leading-tight print-entry-list-table">
+              <div className="overflow-x-auto w-full print:overflow-visible">
+                <table className="w-full border-collapse border border-black text-black text-[10.5px] leading-tight print-entry-list-table table-fixed">
+                  <colgroup>
+                    <col style={{ width: '6.5%' }} />
+                    <col style={{ width: '21%' }} />
+                    <col style={{ width: '7.5%' }} />
+                    <col style={{ width: '4.5%' }} />
+                    <col style={{ width: '15%' }} />
+                    <col style={{ width: '3.5%' }} />
+                    <col style={{ width: '3.5%' }} />
+                    <col style={{ width: '4.5%' }} />
+                    <col style={{ width: '4%' }} />
+                    <col style={{ width: '6.5%' }} />
+                    <col style={{ width: '16.5%' }} />
+                    <col style={{ width: '7%' }} />
+                  </colgroup>
                   <thead>
                     <tr className="bg-white border-b border-black">
-                      <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600 whitespace-nowrap">
+                      <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600">
                         No. Regist.
                       </th>
                       <th className="border border-black px-2 py-1 text-left font-bold text-red-600">
                         Nama (Sesuai dengan akte kelahiran)
                       </th>
-                      <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600 whitespace-nowrap">
+                      <th className="border border-black px-1 py-1 text-center font-bold text-red-600">
                         Jenis kelamin
                       </th>
-                      <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600 whitespace-nowrap">
+                      <th className="border border-black px-1 py-1 text-center font-bold text-red-600">
                         KU
                       </th>
                       <th className="border border-black px-2 py-1 text-left font-bold text-red-600">
                         Club
                       </th>
-                      <th className="border border-black px-1 py-1 text-center font-bold text-red-600 whitespace-nowrap">
+                      <th className="border border-black px-0.5 py-1 text-center font-bold text-red-600">
                         Tgl
                       </th>
-                      <th className="border border-black px-1 py-1 text-center font-bold text-red-600 whitespace-nowrap">
+                      <th className="border border-black px-0.5 py-1 text-center font-bold text-red-600">
                         Bln
                       </th>
-                      <th className="border border-black px-1 py-1 text-center font-bold text-red-600 whitespace-nowrap">
+                      <th className="border border-black px-0.5 py-1 text-center font-bold text-red-600">
                         Tahun
                       </th>
-                      <th className="border border-black px-1 py-1 text-center font-bold text-red-600 whitespace-nowrap">
+                      <th className="border border-black px-0.5 py-1 text-center font-bold text-red-600">
                         Umur
                       </th>
-                      <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600 whitespace-nowrap">
+                      <th className="border border-black px-1 py-1 text-center font-bold text-red-600">
                         NO. Acara
                       </th>
                       <th className="border border-black px-2 py-1 text-left font-bold text-red-600">
                         NO. Lomba
                       </th>
-                      <th className="border border-black px-2 py-1 text-center font-bold text-red-600 whitespace-nowrap">
+                      <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600">
                         Waktu
                       </th>
                     </tr>
@@ -712,40 +798,40 @@ export const PrintModal: React.FC = () => {
                           )}
 
                           <tr className="border-b border-black hover:bg-slate-50/50 print:hover:bg-transparent">
-                            <td className="border border-black px-1.5 py-1 text-center font-medium">
+                            <td className="border border-black px-1 py-1 text-center font-medium">
                               {row.regNumber}
                             </td>
-                            <td className="border border-black px-2 py-1 text-left font-medium">
+                            <td className="border border-black px-2 py-1 text-left font-medium break-words">
                               {row.athleteName}
                             </td>
-                            <td className="border border-black px-1.5 py-1 text-center font-medium whitespace-nowrap">
+                            <td className="border border-black px-1 py-1 text-center font-medium whitespace-nowrap">
                               {row.gender === 'MALE' ? 'Laki-Laki' : 'Perempuan'}
                             </td>
-                            <td className="border border-black px-1.5 py-1 text-center font-medium whitespace-nowrap">
+                            <td className="border border-black px-1 py-1 text-center font-medium whitespace-nowrap">
                               {row.ku}
                             </td>
-                            <td className="border border-black px-2 py-1 text-left font-medium">
+                            <td className="border border-black px-2 py-1 text-left font-medium break-words">
                               {row.clubName}
                             </td>
-                            <td className="border border-black px-1 py-1 text-center font-medium">
+                            <td className="border border-black px-0.5 py-1 text-center font-medium">
                               {row.tgl}
                             </td>
-                            <td className="border border-black px-1 py-1 text-center font-medium">
+                            <td className="border border-black px-0.5 py-1 text-center font-medium">
                               {row.bln}
                             </td>
-                            <td className="border border-black px-1 py-1 text-center font-medium">
+                            <td className="border border-black px-0.5 py-1 text-center font-medium">
                               {row.tahun}
                             </td>
-                            <td className="border border-black px-1 py-1 text-center font-medium">
+                            <td className="border border-black px-0.5 py-1 text-center font-medium">
                               {row.umur}
                             </td>
-                            <td className="border border-black px-1.5 py-1 text-center font-medium">
+                            <td className="border border-black px-1 py-1 text-center font-medium">
                               {row.noAcara}
                             </td>
-                            <td className="border border-black px-2 py-1 text-left font-medium">
+                            <td className="border border-black px-2 py-1 text-left font-medium break-words">
                               {row.noLomba}
                             </td>
-                            <td className="border border-black px-2 py-1 text-center font-medium font-mono">
+                            <td className="border border-black px-1.5 py-1 text-center font-medium font-mono whitespace-nowrap">
                               {row.waktu}
                             </td>
                           </tr>
