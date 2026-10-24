@@ -32,10 +32,109 @@ export const PrintModal: React.FC = () => {
   const [contactEmail, setContactEmail] = useState<string>('Lembangswimmingclub0909@Gmail.Com');
   const [contactPhone, setContactPhone] = useState<string>('0857-9411-2141');
   const [showEditContact, setShowEditContact] = useState<boolean>(false);
+  const [showClubRecapTable, setShowClubRecapTable] = useState<boolean>(true);
 
   const clubMap = useMemo(() => new Map(clubs.map(c => [c.id, c])), [clubs]);
   const eventMap = useMemo(() => new Map(events.map(e => [e.id, e])), [events]);
   const athleteMap = useMemo(() => new Map(athletes.map(a => [a.id, a])), [athletes]);
+
+  // Statistics of athletes and registered event entries for every club
+  const clubEntryStats = useMemo(() => {
+    const map = new Map<string, {
+      clubId: string;
+      clubName: string;
+      clubCode: string;
+      city: string;
+      province: string;
+      maleAthletes: number;
+      femaleAthletes: number;
+      totalAthletes: number;
+      totalNomorLomba: number;
+      distinctEventsCount: number;
+    }>();
+
+    clubs.forEach(c => {
+      map.set(c.id, {
+        clubId: c.id,
+        clubName: c.name,
+        clubCode: c.code,
+        city: c.city,
+        province: c.province,
+        maleAthletes: 0,
+        femaleAthletes: 0,
+        totalAthletes: 0,
+        totalNomorLomba: 0,
+        distinctEventsCount: 0,
+      });
+    });
+
+    const eventSetByClub = new Map<string, Set<string>>();
+
+    athletes.forEach(ath => {
+      let stat = map.get(ath.clubId);
+      if (!stat) {
+        stat = {
+          clubId: ath.clubId,
+          clubName: 'Independen',
+          clubCode: 'IND',
+          city: '-',
+          province: '-',
+          maleAthletes: 0,
+          femaleAthletes: 0,
+          totalAthletes: 0,
+          totalNomorLomba: 0,
+          distinctEventsCount: 0,
+        };
+        map.set(ath.clubId, stat);
+      }
+
+      stat.totalAthletes += 1;
+      if (ath.gender === 'MALE') {
+        stat.maleAthletes += 1;
+      } else {
+        stat.femaleAthletes += 1;
+      }
+
+      const entriesCount = ath.registeredEvents?.length || 0;
+      stat.totalNomorLomba += entriesCount;
+
+      if (!eventSetByClub.has(ath.clubId)) {
+        eventSetByClub.set(ath.clubId, new Set<string>());
+      }
+      const set = eventSetByClub.get(ath.clubId)!;
+      ath.registeredEvents?.forEach(r => {
+        if (r.eventId) set.add(r.eventId);
+      });
+    });
+
+    map.forEach((stat, clubId) => {
+      const set = eventSetByClub.get(clubId) || new Set<string>();
+      stat.distinctEventsCount = set.size;
+    });
+
+    const list = Array.from(map.values()).sort((a, b) => {
+      if (b.totalNomorLomba !== a.totalNomorLomba) {
+        return b.totalNomorLomba - a.totalNomorLomba;
+      }
+      return a.clubName.localeCompare(b.clubName);
+    });
+
+    const grandTotalAthletes = list.reduce((sum, c) => sum + c.totalAthletes, 0);
+    const grandTotalMale = list.reduce((sum, c) => sum + c.maleAthletes, 0);
+    const grandTotalFemale = list.reduce((sum, c) => sum + c.femaleAthletes, 0);
+    const grandTotalNomorLomba = list.reduce((sum, c) => sum + c.totalNomorLomba, 0);
+
+    return {
+      map,
+      list,
+      grandTotals: {
+        totalAthletes: grandTotalAthletes,
+        maleAthletes: grandTotalMale,
+        femaleAthletes: grandTotalFemale,
+        totalNomorLomba: grandTotalNomorLomba,
+      }
+    };
+  }, [clubs, athletes]);
 
   // Synchronize club selection on open
   useEffect(() => {
@@ -73,16 +172,14 @@ export const PrintModal: React.FC = () => {
     }
   }, [selectedClubId, clubMap, championship]);
 
-  if (!activePrintDoc) return null;
-
+  // Prepare Event Results if applicable
   const targetEvent = events.find(e => e.id === printTargetEventId) || events[0];
 
   const handleTriggerPrint = () => {
     window.print();
   };
 
-  // Prepare Event Results if applicable
-  const allLanes = targetEvent?.heats.flatMap(h => h.lanes) || [];
+  const allLanes = targetEvent?.heats ? targetEvent.heats.flatMap(h => h.lanes) : [];
   const sortedEventResults = [...allLanes].sort((a, b) => {
     if (a.rankInEvent && b.rankInEvent) return a.rankInEvent - b.rankInEvent;
     if (a.rankInEvent) return -1;
@@ -154,7 +251,10 @@ export const PrintModal: React.FC = () => {
 
   // Compile Entry List rows matching exact reference layout
   const entryListRows = useMemo(() => {
+    if (activePrintDoc !== 'entry_list') return [];
+
     const rows: {
+      clubId: string;
       regNumber: string;
       athleteName: string;
       gender: 'MALE' | 'FEMALE';
@@ -176,8 +276,13 @@ export const PrintModal: React.FC = () => {
       return true;
     });
 
-    // Sort athletes numerically by register number if available, else by name
+    // Sort athletes: if ALL clubs, group by club first, then by register number / name
     const sorted = [...filtered].sort((a, b) => {
+      if (selectedClubId === 'ALL') {
+        const clubA = (clubMap.get(a.clubId)?.name || '').toLowerCase();
+        const clubB = (clubMap.get(b.clubId)?.name || '').toLowerCase();
+        if (clubA !== clubB) return clubA.localeCompare(clubB);
+      }
       const numA = parseInt((a.regNumber || '').replace(/\D/g, ''), 10) || 0;
       const numB = parseInt((b.regNumber || '').replace(/\D/g, ''), 10) || 0;
       if (numA && numB && numA !== numB) return numA - numB;
@@ -201,6 +306,7 @@ export const PrintModal: React.FC = () => {
             : reg.seedTime;
 
           rows.push({
+            clubId: ath.clubId,
             regNumber: regNo,
             athleteName: ath.name.toUpperCase(),
             gender: ath.gender,
@@ -217,6 +323,7 @@ export const PrintModal: React.FC = () => {
         });
       } else {
         rows.push({
+          clubId: ath.clubId,
           regNumber: regNo,
           athleteName: ath.name.toUpperCase(),
           gender: ath.gender,
@@ -234,7 +341,9 @@ export const PrintModal: React.FC = () => {
     });
 
     return rows;
-  }, [athletes, selectedClubId, clubMap, eventMap]);
+  }, [activePrintDoc, athletes, selectedClubId, clubMap, eventMap]);
+
+  if (!activePrintDoc) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
@@ -263,6 +372,23 @@ export const PrintModal: React.FC = () => {
             print-color-adjust: exact !important;
           }
           .print-entry-list-table td {
+            border: 1px solid #000000 !important;
+            color: #000000 !important;
+          }
+          .print-recap-table {
+            border-collapse: collapse !important;
+            width: 100% !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .print-recap-table th {
+            color: #dc2626 !important;
+            font-weight: 700 !important;
+            border: 1px solid #000000 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .print-recap-table td {
             border: 1px solid #000000 !important;
             color: #000000 !important;
           }
@@ -296,12 +422,37 @@ export const PrintModal: React.FC = () => {
                     onChange={(e) => setSelectedClubId(e.target.value)}
                     className="bg-slate-700 text-white rounded px-2 py-0.5 text-xs font-semibold focus:outline-hidden"
                   >
-                    <option value="ALL">Semua Perkumpulan</option>
-                    {clubs.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
+                    <option value="ALL">Semua Perkumpulan ({clubEntryStats.grandTotals.totalNomorLomba} nomor lomba)</option>
+                    {clubs.map(c => {
+                      const stat = clubEntryStats.map.get(c.id);
+                      const totalNomor = stat ? stat.totalNomorLomba : 0;
+                      return (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({totalNomor} nomor lomba)
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
+
+                <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 border border-slate-700 text-xs rounded-lg">
+                  <span className="text-slate-400">Total Nomor:</span>
+                  <span className="font-mono font-bold text-amber-300">
+                    {selectedClubId === 'ALL'
+                      ? `${clubEntryStats.grandTotals.totalNomorLomba} Nomor`
+                      : `${clubEntryStats.map.get(selectedClubId)?.totalNomorLomba || 0} Nomor`}
+                  </span>
+                </div>
+
+                <label className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs rounded-lg cursor-pointer transition-colors select-none">
+                  <input
+                    type="checkbox"
+                    checked={showClubRecapTable}
+                    onChange={(e) => setShowClubRecapTable(e.target.checked)}
+                    className="rounded text-sky-500 focus:ring-0 w-3.5 h-3.5"
+                  />
+                  <span>Tabel Rekap Klub</span>
+                </label>
 
                 <button
                   type="button"
@@ -438,6 +589,58 @@ export const PrintModal: React.FC = () => {
                 </div>
               </div>
 
+              {/* Official Information Banner: Club & Total Nomor Lomba */}
+              {selectedClubId !== 'ALL' ? (
+                <div className="border border-black bg-slate-50 px-3 py-2 text-black text-xs flex flex-wrap items-center justify-between gap-2 print:bg-transparent">
+                  <div>
+                    <span className="font-bold text-red-600">PERKUMPULAN:</span>{' '}
+                    <span className="font-extrabold uppercase tracking-wide">
+                      {clubMap.get(selectedClubId)?.name || 'KLUB RENANG'}
+                    </span>{' '}
+                    <span className="text-[11px] text-slate-600 font-mono">({clubMap.get(selectedClubId)?.code})</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div>
+                      Jumlah Atlet: <strong className="font-bold">{clubEntryStats.map.get(selectedClubId)?.totalAthletes || 0}</strong> Orang{' '}
+                      <span className="text-[10.5px] text-slate-500">
+                        ({clubEntryStats.map.get(selectedClubId)?.maleAthletes || 0} PA / {clubEntryStats.map.get(selectedClubId)?.femaleAthletes || 0} PI)
+                      </span>
+                    </div>
+                    <div className="border-l-2 border-red-600 pl-2.5 font-bold text-red-600">
+                      TOTAL NOMOR LOMBA DIIKUTI:{' '}
+                      <span className="text-sm font-black text-red-600">
+                        {clubEntryStats.map.get(selectedClubId)?.totalNomorLomba || 0}
+                      </span>{' '}
+                      NOMOR LOMBA
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="border border-black bg-slate-50 px-3 py-2 text-black text-xs flex flex-wrap items-center justify-between gap-2 print:bg-transparent">
+                  <div>
+                    <span className="font-bold text-red-600">DAFTAR ENTRI SELURUH PERKUMPULAN</span>{' '}
+                    <span className="text-[11px] text-slate-600">
+                      ({clubEntryStats.list.filter(c => c.totalAthletes > 0).length} Perkumpulan Terdaftar)
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div>
+                      Total Atlet: <strong className="font-bold">{clubEntryStats.grandTotals.totalAthletes}</strong> Orang{' '}
+                      <span className="text-[10.5px] text-slate-500">
+                        ({clubEntryStats.grandTotals.maleAthletes} PA / {clubEntryStats.grandTotals.femaleAthletes} PI)
+                      </span>
+                    </div>
+                    <div className="border-l-2 border-red-600 pl-2.5 font-bold text-red-600">
+                      TOTAL KESELURUHAN NOMOR LOMBA:{' '}
+                      <span className="text-sm font-black text-red-600">
+                        {clubEntryStats.grandTotals.totalNomorLomba}
+                      </span>{' '}
+                      NOMOR LOMBA
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Grid Table with Black Solid Borders and Red Bold Headers */}
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse border border-black text-black text-[10.5px] leading-tight print-entry-list-table">
@@ -482,46 +685,82 @@ export const PrintModal: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {entryListRows.map((row, idx) => (
-                      <tr key={idx} className="border-b border-black hover:bg-slate-50/50 print:hover:bg-transparent">
-                        <td className="border border-black px-1.5 py-1 text-center font-medium">
-                          {row.regNumber}
-                        </td>
-                        <td className="border border-black px-2 py-1 text-left font-medium">
-                          {row.athleteName}
-                        </td>
-                        <td className="border border-black px-1.5 py-1 text-center font-medium whitespace-nowrap">
-                          {row.gender === 'MALE' ? 'Laki-Laki' : 'Perempuan'}
-                        </td>
-                        <td className="border border-black px-1.5 py-1 text-center font-medium whitespace-nowrap">
-                          {row.ku}
-                        </td>
-                        <td className="border border-black px-2 py-1 text-left font-medium">
-                          {row.clubName}
-                        </td>
-                        <td className="border border-black px-1 py-1 text-center font-medium">
-                          {row.tgl}
-                        </td>
-                        <td className="border border-black px-1 py-1 text-center font-medium">
-                          {row.bln}
-                        </td>
-                        <td className="border border-black px-1 py-1 text-center font-medium">
-                          {row.tahun}
-                        </td>
-                        <td className="border border-black px-1 py-1 text-center font-medium">
-                          {row.umur}
-                        </td>
-                        <td className="border border-black px-1.5 py-1 text-center font-medium">
-                          {row.noAcara}
-                        </td>
-                        <td className="border border-black px-2 py-1 text-left font-medium">
-                          {row.noLomba}
-                        </td>
-                        <td className="border border-black px-2 py-1 text-center font-medium font-mono">
-                          {row.waktu}
-                        </td>
-                      </tr>
-                    ))}
+                    {entryListRows.map((row, idx) => {
+                      const isFirstOfClub = selectedClubId === 'ALL' && (idx === 0 || row.clubId !== entryListRows[idx - 1]?.clubId);
+                      const isLastOfClub = selectedClubId === 'ALL' && (idx === entryListRows.length - 1 || row.clubId !== entryListRows[idx + 1]?.clubId);
+                      const clubStat = clubEntryStats.map.get(row.clubId);
+
+                      return (
+                        <React.Fragment key={idx}>
+                          {/* Club Section Header when viewing ALL clubs */}
+                          {isFirstOfClub && (
+                            <tr className="bg-slate-100/90 border-t-2 border-b border-black font-bold">
+                              <td colSpan={12} className="border border-black px-2.5 py-1.5 text-left text-black font-extrabold text-[11px]">
+                                <span className="text-red-600 uppercase">PERKUMPULAN:</span> {row.clubName} &nbsp;|&nbsp;{' '}
+                                <span className="font-semibold text-slate-800">
+                                  {clubStat?.totalAthletes || 0} Atlet ({clubStat?.maleAthletes || 0} PA / {clubStat?.femaleAthletes || 0} PI)
+                                </span>{' '}
+                                &nbsp;|&nbsp;{' '}
+                                <span className="text-red-700 font-black">
+                                  TOTAL NOMOR LOMBA DIIKUTI: {clubStat?.totalNomorLomba || 0} NOMOR LOMBA
+                                </span>
+                              </td>
+                            </tr>
+                          )}
+
+                          <tr className="border-b border-black hover:bg-slate-50/50 print:hover:bg-transparent">
+                            <td className="border border-black px-1.5 py-1 text-center font-medium">
+                              {row.regNumber}
+                            </td>
+                            <td className="border border-black px-2 py-1 text-left font-medium">
+                              {row.athleteName}
+                            </td>
+                            <td className="border border-black px-1.5 py-1 text-center font-medium whitespace-nowrap">
+                              {row.gender === 'MALE' ? 'Laki-Laki' : 'Perempuan'}
+                            </td>
+                            <td className="border border-black px-1.5 py-1 text-center font-medium whitespace-nowrap">
+                              {row.ku}
+                            </td>
+                            <td className="border border-black px-2 py-1 text-left font-medium">
+                              {row.clubName}
+                            </td>
+                            <td className="border border-black px-1 py-1 text-center font-medium">
+                              {row.tgl}
+                            </td>
+                            <td className="border border-black px-1 py-1 text-center font-medium">
+                              {row.bln}
+                            </td>
+                            <td className="border border-black px-1 py-1 text-center font-medium">
+                              {row.tahun}
+                            </td>
+                            <td className="border border-black px-1 py-1 text-center font-medium">
+                              {row.umur}
+                            </td>
+                            <td className="border border-black px-1.5 py-1 text-center font-medium">
+                              {row.noAcara}
+                            </td>
+                            <td className="border border-black px-2 py-1 text-left font-medium">
+                              {row.noLomba}
+                            </td>
+                            <td className="border border-black px-2 py-1 text-center font-medium font-mono">
+                              {row.waktu}
+                            </td>
+                          </tr>
+
+                          {/* Club Subtotal Row when viewing ALL clubs */}
+                          {isLastOfClub && (
+                            <tr className="bg-amber-50/80 border-b-2 border-black font-bold text-[10.5px]">
+                              <td colSpan={9} className="border border-black px-2 py-1 text-right font-extrabold text-black uppercase">
+                                Subtotal Nomor Lomba {row.clubName}:
+                              </td>
+                              <td colSpan={3} className="border border-black px-2 py-1 text-center font-black text-red-700">
+                                {clubStat?.totalNomorLomba || 0} Nomor Lomba ({clubStat?.totalAthletes || 0} Atlet)
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
 
                     {entryListRows.length === 0 && (
                       <tr>
@@ -531,18 +770,153 @@ export const PrintModal: React.FC = () => {
                       </tr>
                     )}
                   </tbody>
+
+                  {/* Table Footer with Exact Total Nomor Lomba */}
+                  {entryListRows.length > 0 && (
+                    <tfoot>
+                      {selectedClubId !== 'ALL' ? (
+                        <tr className="bg-slate-100 font-bold border-t-2 border-black text-black">
+                          <td colSpan={9} className="border border-black px-2.5 py-1.5 text-right font-extrabold text-black uppercase text-[11px]">
+                            JUMLAH TOTAL NOMOR LOMBA YANG DIIKUTI ({clubMap.get(selectedClubId)?.name || 'KLUB'}):
+                          </td>
+                          <td colSpan={3} className="border border-black px-2 py-1.5 text-center font-black text-red-600 text-xs">
+                            {clubEntryStats.map.get(selectedClubId)?.totalNomorLomba || entryListRows.length} NOMOR LOMBA ({clubEntryStats.map.get(selectedClubId)?.totalAthletes || 0} ATLET)
+                          </td>
+                        </tr>
+                      ) : (
+                        <tr className="bg-slate-200 font-bold border-t-2 border-black text-black">
+                          <td colSpan={9} className="border border-black px-2.5 py-1.5 text-right font-extrabold text-black uppercase text-[11px]">
+                            TOTAL KESELURUHAN NOMOR LOMBA SELURUH PERKUMPULAN:
+                          </td>
+                          <td colSpan={3} className="border border-black px-2 py-1.5 text-center font-black text-red-600 text-xs">
+                            {clubEntryStats.grandTotals.totalNomorLomba} NOMOR LOMBA ({clubEntryStats.grandTotals.totalAthletes} ATLET)
+                          </td>
+                        </tr>
+                      )}
+                    </tfoot>
+                  )}
                 </table>
               </div>
 
               {/* Sub-summary count */}
-              <div className="flex justify-between items-center text-[10px] text-slate-600 pt-1 border-t border-slate-300 print:text-black">
+              <div className="flex flex-wrap justify-between items-center text-[10px] text-slate-600 pt-1 border-t border-slate-300 print:text-black gap-2">
                 <div>
-                  Total: <span className="font-bold">{entryListRows.length} entri perlombaan</span>
+                  Total:{' '}
+                  <span className="font-bold">
+                    {entryListRows.length} entri perlombaan
+                  </span>
+                  {' · '}
+                  <span className="font-bold text-red-600">
+                    {selectedClubId === 'ALL'
+                      ? `${clubEntryStats.grandTotals.totalNomorLomba} nomor lomba diikuti oleh ${clubEntryStats.grandTotals.totalAthletes} atlet`
+                      : `${clubEntryStats.map.get(selectedClubId)?.totalNomorLomba || 0} nomor lomba diikuti oleh ${clubEntryStats.map.get(selectedClubId)?.totalAthletes || 0} atlet`}
+                  </span>
                 </div>
                 <div>
                   Dicetak pada {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </div>
               </div>
+
+              {/* REKAPITULASI RESMI JUMLAH ATLET & TOTAL NOMOR LOMBA SETIAP PERKUMPULAN */}
+              {showClubRecapTable && (
+                <div className="pt-4 space-y-2 break-inside-avoid print:pt-4">
+                  <div className="border-b border-black pb-1.5 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-xs sm:text-sm font-bold text-black uppercase tracking-wider">
+                        REKAPITULASI JUMLAH ATLET &amp; TOTAL NOMOR LOMBA SETIAP PERKUMPULAN
+                      </h3>
+                      <p className="text-[10px] text-slate-600">
+                        Tabel resmi rekapitulasi partisipasi dan jumlah entri nomor lomba yang diikuti per perkumpulan / klub renang.
+                      </p>
+                    </div>
+                    <span className="text-[10.5px] font-bold px-2 py-0.5 bg-red-50 text-red-700 border border-red-300 rounded print:hidden">
+                      {clubEntryStats.list.filter(c => c.totalAthletes > 0).length} Perkumpulan Terdaftar
+                    </span>
+                  </div>
+
+                  <table className="w-full border-collapse border border-black text-black text-[10.5px] leading-tight print-recap-table">
+                    <thead>
+                      <tr className="bg-white border-b border-black">
+                        <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600 w-8">
+                          No.
+                        </th>
+                        <th className="border border-black px-2 py-1 text-left font-bold text-red-600">
+                          Nama Perkumpulan (Klub)
+                        </th>
+                        <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600 w-16">
+                          Kode
+                        </th>
+                        <th className="border border-black px-2 py-1 text-left font-bold text-red-600">
+                          Kota / Daerah
+                        </th>
+                        <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600 w-12">
+                          PA
+                        </th>
+                        <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600 w-12">
+                          PI
+                        </th>
+                        <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600 w-16">
+                          Total Atlet
+                        </th>
+                        <th className="border border-black px-2 py-1 text-center font-bold text-red-600 bg-red-50/40">
+                          Jumlah Total Nomor Lomba Diikuti
+                        </th>
+                        <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600 w-24">
+                          Rata-rata/Atlet
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {clubEntryStats.list.map((c, i) => {
+                        const isSelected = selectedClubId === c.clubId;
+                        const avg = c.totalAthletes > 0 ? (c.totalNomorLomba / c.totalAthletes).toFixed(1) : '0';
+                        return (
+                          <tr 
+                            key={c.clubId}
+                            className={`border-b border-black hover:bg-slate-50/60 ${
+                              isSelected ? 'bg-amber-100/70 font-semibold' : (i % 2 === 1 ? 'bg-slate-50/40' : 'bg-white')
+                            }`}
+                          >
+                            <td className="border border-black px-1.5 py-1 text-center">{i + 1}</td>
+                            <td className="border border-black px-2 py-1 text-left font-medium">
+                              {c.clubName} {isSelected && <span className="text-red-600 text-[10px] font-bold ml-1">(Dipilih)</span>}
+                            </td>
+                            <td className="border border-black px-1.5 py-1 text-center font-mono font-medium">{c.clubCode}</td>
+                            <td className="border border-black px-2 py-1 text-left text-slate-700">{c.city || '-'}</td>
+                            <td className="border border-black px-1.5 py-1 text-center">{c.maleAthletes}</td>
+                            <td className="border border-black px-1.5 py-1 text-center">{c.femaleAthletes}</td>
+                            <td className="border border-black px-1.5 py-1 text-center font-bold">{c.totalAthletes}</td>
+                            <td className="border border-black px-2 py-1 text-center font-extrabold text-red-600 text-[11px] bg-red-50/30">
+                              {c.totalNomorLomba} Nomor Lomba
+                            </td>
+                            <td className="border border-black px-1.5 py-1 text-center font-mono text-slate-700">{avg}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr className="bg-slate-200 font-extrabold border-t-2 border-black text-black">
+                        <td colSpan={4} className="border border-black px-2 py-1 text-right uppercase text-[11px]">
+                          TOTAL KESELURUHAN ({clubEntryStats.list.length} PERKUMPULAN):
+                        </td>
+                        <td className="border border-black px-1.5 py-1 text-center">{clubEntryStats.grandTotals.maleAthletes}</td>
+                        <td className="border border-black px-1.5 py-1 text-center">{clubEntryStats.grandTotals.femaleAthletes}</td>
+                        <td className="border border-black px-1.5 py-1 text-center text-black font-black">
+                          {clubEntryStats.grandTotals.totalAthletes}
+                        </td>
+                        <td className="border border-black px-2 py-1 text-center text-red-600 font-black text-xs">
+                          {clubEntryStats.grandTotals.totalNomorLomba} NOMOR LOMBA
+                        </td>
+                        <td className="border border-black px-1.5 py-1 text-center font-mono">
+                          {clubEntryStats.grandTotals.totalAthletes > 0 
+                            ? (clubEntryStats.grandTotals.totalNomorLomba / clubEntryStats.grandTotals.totalAthletes).toFixed(1) 
+                            : '0'}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 

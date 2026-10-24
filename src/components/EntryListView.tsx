@@ -30,9 +30,63 @@ export const EntryListView: React.FC = () => {
   const [selectedAgeFilter, setSelectedAgeFilter] = useState<string>('ALL');
   const [selectedGenderFilter, setSelectedGenderFilter] = useState<string>('ALL');
   const [selectedClubFilter, setSelectedClubFilter] = useState<string>('ALL');
+  const [showClubRecap, setShowClubRecap] = useState<boolean>(true);
 
   const clubMap = useMemo(() => new Map(clubs.map(c => [c.id, c])), [clubs]);
   const eventMap = useMemo(() => new Map(events.map(e => [e.id, e])), [events]);
+
+  // Statistics of athletes and total registered event numbers per club
+  const clubStats = useMemo(() => {
+    const map = new Map<string, {
+      clubId: string;
+      name: string;
+      code: string;
+      city: string;
+      athletesCount: number;
+      maleCount: number;
+      femaleCount: number;
+      totalNomorLomba: number;
+    }>();
+
+    clubs.forEach(c => {
+      map.set(c.id, {
+        clubId: c.id,
+        name: c.name,
+        code: c.code,
+        city: c.city,
+        athletesCount: 0,
+        maleCount: 0,
+        femaleCount: 0,
+        totalNomorLomba: 0,
+      });
+    });
+
+    athletes.forEach(ath => {
+      let stat = map.get(ath.clubId);
+      if (!stat) {
+        stat = {
+          clubId: ath.clubId,
+          name: 'Independen',
+          code: 'IND',
+          city: '-',
+          athletesCount: 0,
+          maleCount: 0,
+          femaleCount: 0,
+          totalNomorLomba: 0,
+        };
+        map.set(ath.clubId, stat);
+      }
+      stat.athletesCount += 1;
+      if (ath.gender === 'MALE') stat.maleCount += 1;
+      else stat.femaleCount += 1;
+      stat.totalNomorLomba += (ath.registeredEvents?.length || 0);
+    });
+
+    const list = Array.from(map.values()).sort((a, b) => b.totalNomorLomba - a.totalNomorLomba);
+    const grandTotalNomor = list.reduce((s, c) => s + c.totalNomorLomba, 0);
+
+    return { map, list, grandTotalNomor };
+  }, [clubs, athletes]);
 
   // Flatten entries: each athlete's registered event is an entry row
   const allEntries = useMemo(() => {
@@ -342,17 +396,139 @@ export const EntryListView: React.FC = () => {
             <select
               value={selectedClubFilter}
               onChange={e => setSelectedClubFilter(e.target.value)}
-              className="w-full py-1.5 px-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-sky-500"
+              className="w-full py-1.5 px-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-sky-500 font-medium"
             >
-              <option value="ALL">Semua Klub ({clubs.length})</option>
-              {clubs.map(c => (
-                <option key={c.id} value={c.id}>
-                  [{c.code}] {c.name}
-                </option>
-              ))}
+              <option value="ALL">Semua Klub ({clubs.length} Klub · {clubStats.grandTotalNomor} Nomor Lomba)</option>
+              {clubs.map(c => {
+                const stat = clubStats.map.get(c.id);
+                const count = stat ? stat.totalNomorLomba : 0;
+                const aths = stat ? stat.athletesCount : 0;
+                return (
+                  <option key={c.id} value={c.id}>
+                    [{c.code}] {c.name} — {count} Nomor Lomba ({aths} Atlet)
+                  </option>
+                );
+              })}
             </select>
           </div>
         </div>
+      </div>
+
+      {/* Rekapitulasi Total Nomor Lomba per Perkumpulan (Klub) */}
+      <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 bg-red-100 text-red-700 rounded-md">
+              <Trophy className="w-4 h-4" />
+            </span>
+            <div>
+              <h2 className="text-xs sm:text-sm font-bold text-slate-900">
+                Total Nomor Lomba yang Diikuti oleh Setiap Perkumpulan (Klub)
+              </h2>
+              <p className="text-[11px] text-slate-500">
+                Rekapitulasi resmi kuota nomor lomba per perkumpulan renang peserta kejuaraan.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowClubRecap(!showClubRecap)}
+              className="text-xs text-sky-600 hover:text-sky-700 font-semibold cursor-pointer"
+            >
+              {showClubRecap ? 'Sembunyikan' : 'Tampilkan'}
+            </button>
+            <button
+              onClick={() => openPrintModal('entry_list', undefined, selectedClubFilter !== 'ALL' ? selectedClubFilter : undefined)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-red-600 hover:bg-red-50 rounded-lg border border-red-200 transition-colors"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Cetak Entry List</span>
+            </button>
+          </div>
+        </div>
+
+        {showClubRecap && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {clubStats.list.map(c => {
+              const isSelected = selectedClubFilter === c.clubId;
+              return (
+                <div
+                  key={c.clubId}
+                  onClick={() => setSelectedClubFilter(isSelected ? 'ALL' : c.clubId)}
+                  className={`p-3 rounded-lg border transition-all cursor-pointer ${
+                    isSelected
+                      ? 'border-red-500 bg-red-50/50 shadow-xs ring-2 ring-red-400/20'
+                      : 'border-slate-200 bg-slate-50/60 hover:bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className="font-mono text-[10px] font-bold text-slate-500 uppercase px-1.5 py-0.5 bg-white border border-slate-200 rounded">
+                        {c.code}
+                      </span>
+                      <h3 className="text-xs font-bold text-slate-900 mt-1 truncate" title={c.name}>
+                        {c.name}
+                      </h3>
+                      <div className="text-[10.5px] text-slate-500 mt-0.5">
+                        {c.athletesCount} atlet ({c.maleCount} PA / {c.femaleCount} PI)
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-base font-black text-red-600 font-mono">
+                        {c.totalNomorLomba}
+                      </div>
+                      <div className="text-[9.5px] font-bold text-slate-400 uppercase tracking-tight">
+                        Nomor Lomba
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-2.5 pt-2 border-t border-slate-200/80 flex items-center justify-between text-[10.5px]">
+                    <span className="text-slate-500">
+                      Rata-rata: {c.athletesCount > 0 ? (c.totalNomorLomba / c.athletesCount).toFixed(1) : 0} nomor/atlet
+                    </span>
+                    <span className={`font-semibold ${isSelected ? 'text-red-700' : 'text-sky-600'}`}>
+                      {isSelected ? '✓ Terpilih' : 'Filter →'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Highlighted Banner when Club Filter is Active */}
+        {selectedClubFilter !== 'ALL' && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-red-800">Filter Aktif:</span>
+              <span className="font-extrabold text-red-950">
+                {clubStats.map.get(selectedClubFilter)?.name} ({clubStats.map.get(selectedClubFilter)?.code})
+              </span>
+              <span className="text-red-700">
+                — Mengikuti <strong className="font-black text-red-900">{clubStats.map.get(selectedClubFilter)?.totalNomorLomba} Nomor Lomba</strong> ({clubStats.map.get(selectedClubFilter)?.athletesCount} Atlet)
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedClubFilter('ALL')}
+                className="text-slate-600 hover:text-slate-900 underline text-[11px]"
+              >
+                Reset Filter
+              </button>
+              <button
+                type="button"
+                onClick={() => openPrintModal('entry_list', undefined, selectedClubFilter)}
+                className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded font-bold text-[11px] inline-flex items-center gap-1 shadow-xs"
+              >
+                <Printer className="w-3 h-3" />
+                <span>Cetak Entry List Klub Ini</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Entry List Table */}
