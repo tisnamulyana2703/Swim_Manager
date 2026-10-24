@@ -139,7 +139,7 @@ export const PrintModal: React.FC = () => {
 
   // Synchronize club/event selection and page orientation on open
   useEffect(() => {
-    if (activePrintDoc === 'entry_list' || activePrintDoc === 'nomor_list') {
+    if (activePrintDoc === 'entry_list' || activePrintDoc === 'nomor_list' || activePrintDoc === 'start_list' || activePrintDoc === 'start_list_all') {
       setPageOrientation('landscape');
       if (activePrintDoc === 'nomor_list') {
         if (printTargetEventId) {
@@ -496,7 +496,8 @@ export const PrintModal: React.FC = () => {
             border: none !important;
           }
           .print-entry-list-table,
-          .print-nomor-list-table {
+          .print-nomor-list-table,
+          .print-start-list-table {
             border-collapse: collapse !important;
             width: 100% !important;
             max-width: 100% !important;
@@ -504,20 +505,24 @@ export const PrintModal: React.FC = () => {
             page-break-inside: auto !important;
           }
           .print-entry-list-table thead,
-          .print-nomor-list-table thead {
+          .print-nomor-list-table thead,
+          .print-start-list-table thead {
             display: table-header-group !important;
           }
           .print-entry-list-table tfoot,
-          .print-nomor-list-table tfoot {
+          .print-nomor-list-table tfoot,
+          .print-start-list-table tfoot {
             display: table-footer-group !important;
           }
           .print-entry-list-table tr,
-          .print-nomor-list-table tr {
+          .print-nomor-list-table tr,
+          .print-start-list-table tr {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
           }
           .print-entry-list-table th,
-          .print-nomor-list-table th {
+          .print-nomor-list-table th,
+          .print-start-list-table th {
             color: #dc2626 !important;
             font-weight: 700 !important;
             border: 1px solid #000000 !important;
@@ -529,7 +534,8 @@ export const PrintModal: React.FC = () => {
             line-height: 1.15 !important;
           }
           .print-entry-list-table td,
-          .print-nomor-list-table td {
+          .print-nomor-list-table td,
+          .print-start-list-table td {
             border: 1px solid #000000 !important;
             color: #000000 !important;
             padding: 3px 3px !important;
@@ -539,9 +545,9 @@ export const PrintModal: React.FC = () => {
         }
       `}</style>
 
-      {/* Container - wider for entry list and nomor list table preview */}
+      {/* Container - wider for entry list, nomor list, and start list table preview */}
       <div className={`bg-white rounded-2xl w-full shadow-2xl border border-slate-300 overflow-hidden my-4 max-h-[94vh] flex flex-col print:shadow-none print:border-none print:rounded-none print:my-0 print:mx-0 print:max-h-none print:max-w-none print:w-full print:overflow-visible print:bg-white ${
-        (activePrintDoc === 'entry_list' || activePrintDoc === 'nomor_list')
+        (activePrintDoc === 'entry_list' || activePrintDoc === 'nomor_list' || activePrintDoc === 'start_list' || activePrintDoc === 'start_list_all')
           ? (pageOrientation === 'landscape' ? 'max-w-[96vw] xl:max-w-[1360px]' : 'max-w-5xl') 
           : 'max-w-4xl'
       }`}>
@@ -555,9 +561,11 @@ export const PrintModal: React.FC = () => {
                 ? 'Pratinjau Cetak Entry List (Format Resmi PB Akuatik Indonesia)' 
                 : activePrintDoc === 'nomor_list'
                 ? 'Pratinjau Cetak Nomor List (Daftar Peserta per Nomor Lomba)'
+                : (activePrintDoc === 'start_list' || activePrintDoc === 'start_list_all')
+                ? 'Pratinjau Cetak Starting List (Susunan Lintasan Seri)'
                 : 'Pratinjau Cetak Dokumen Resmi (Format Standar A4)'}
             </span>
-            {(activePrintDoc === 'entry_list' || activePrintDoc === 'nomor_list') && (
+            {(activePrintDoc === 'entry_list' || activePrintDoc === 'nomor_list' || activePrintDoc === 'start_list' || activePrintDoc === 'start_list_all') && (
               <span className="hidden md:inline-flex items-center text-[10.5px] font-semibold bg-sky-950 border border-sky-600/60 text-sky-300 px-2 py-0.5 rounded-full">
                 A4 {pageOrientation === 'landscape' ? 'Lanskap (Pas Lebar Halaman)' : 'Potret'}
               </span>
@@ -706,26 +714,52 @@ export const PrintModal: React.FC = () => {
             )}
 
             {(activePrintDoc === 'start_list' || activePrintDoc === 'start_list_all') && (
-              <div className="flex items-center bg-slate-800 rounded-lg p-0.5 text-xs">
-                <button
-                  type="button"
-                  onClick={() => openPrintModal('start_list', printTargetEventId || undefined)}
-                  className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
-                    activePrintDoc === 'start_list' ? 'bg-sky-500 text-white font-bold' : 'text-slate-300 hover:text-white'
-                  }`}
-                >
-                  Nomor Ini Saja
-                </button>
-                <button
-                  type="button"
-                  onClick={() => openPrintModal('start_list_all')}
-                  className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
-                    activePrintDoc === 'start_list_all' ? 'bg-sky-500 text-white font-bold' : 'text-slate-300 hover:text-white'
-                  }`}
-                >
-                  Semua Nomor Lomba (Buku Acara)
-                </button>
-              </div>
+              <>
+                {/* Orientation Selector */}
+                <div className="flex items-center bg-slate-800 rounded-lg p-0.5 text-xs border border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => setPageOrientation('landscape')}
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                      pageOrientation === 'landscape' ? 'bg-sky-500 text-white font-bold shadow-xs' : 'text-slate-300 hover:text-white'
+                    }`}
+                    title="Cetak format A4 Lanskap (Lebar Penuh)"
+                  >
+                    A4 Lanskap
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPageOrientation('portrait')}
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                      pageOrientation === 'portrait' ? 'bg-sky-500 text-white font-bold shadow-xs' : 'text-slate-300 hover:text-white'
+                    }`}
+                    title="Cetak format A4 Potret (Tegak)"
+                  >
+                    A4 Potret
+                  </button>
+                </div>
+
+                <div className="flex items-center bg-slate-800 rounded-lg p-0.5 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => openPrintModal('start_list', printTargetEventId || undefined)}
+                    className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
+                      activePrintDoc === 'start_list' ? 'bg-sky-500 text-white font-bold' : 'text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    Nomor Ini Saja
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openPrintModal('start_list_all')}
+                    className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
+                      activePrintDoc === 'start_list_all' ? 'bg-sky-500 text-white font-bold' : 'text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    Semua Nomor Lomba (Buku Acara)
+                  </button>
+                </div>
+              </>
             )}
 
             <button
@@ -782,8 +816,8 @@ export const PrintModal: React.FC = () => {
         {/* Printable Document Body */}
         <div className="p-6 sm:p-10 overflow-y-auto printable-content font-sans text-slate-900 space-y-6 print:p-0 print:m-0 print:space-y-4 print:overflow-visible print:w-full">
           
-          {/* Official Letterhead (KOP SURAT RESMI) - Hidden for entry_list and nomor_list as they have dedicated official headers */}
-          {activePrintDoc !== 'entry_list' && activePrintDoc !== 'nomor_list' && (
+          {/* Official Letterhead (KOP SURAT RESMI) - Hidden for entry_list, nomor_list, and start_list as they have dedicated official headers */}
+          {activePrintDoc !== 'entry_list' && activePrintDoc !== 'nomor_list' && activePrintDoc !== 'start_list' && activePrintDoc !== 'start_list_all' && (
             <div className="border-b-2 border-slate-900 pb-4 text-center space-y-1">
               <div className="text-xs font-bold tracking-widest uppercase text-slate-700">
                 {championship.organizer}
@@ -1199,99 +1233,109 @@ export const PrintModal: React.FC = () => {
                   Dicetak pada {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </div>
               </div>
-
-              {/* Official Signatures */}
-              <div className="pt-6 grid grid-cols-3 gap-6 text-center text-xs text-black font-sans print:pt-4 print:break-inside-avoid">
-                <div>
-                  <div className="font-semibold">Technical Delegate,</div>
-                  <div className="h-16 flex items-end justify-center font-bold underline">
-                    {championship.technicalDelegate}
-                  </div>
-                  <div className="text-[10px] text-slate-500">World Aquatics / PB Akuatik</div>
-                </div>
-
-                <div>
-                  <div className="font-semibold">Referee (Wasit Ketua),</div>
-                  <div className="h-16 flex items-end justify-center font-bold underline">
-                    {championship.referee}
-                  </div>
-                  <div className="text-[10px] text-slate-500">Wasit Nasional</div>
-                </div>
-
-                <div>
-                  <div className="font-semibold">Chief Recorder / Sekretariat,</div>
-                  <div className="h-16 flex items-end justify-center font-bold underline">
-                    {championship.chiefRecorder}
-                  </div>
-                  <div className="text-[10px] text-slate-500">Panitia Perlombaan</div>
-                </div>
-              </div>
             </div>
           )}
 
-          {/* DOCUMENT: START LIST ALL EVENTS (BUKU ACARA PERTANDINGAN LENGKAP) */}
+          {/* ========================================================================= */}
+          {/* DOCUMENT: START LIST ALL EVENTS (BUKU ACARA LOMBA LENGKAP)                */}
+          {/* ========================================================================= */}
           {activePrintDoc === 'start_list_all' && (
-            <div className="space-y-8">
-              <div className="border-b border-slate-300 pb-2 text-center">
-                <div className="text-xs font-bold uppercase text-slate-500">BUKU ACARA LOMBA LENGKAP (COMPLETE MEET PROGRAM)</div>
-                <h2 className="text-base font-extrabold text-slate-900">
-                  DAFTAR SUSUNAN PERTANDINGAN & LINTASAN SELURUH NOMOR LOMBA (START LIST)
-                </h2>
-                <div className="text-xs text-slate-600 mt-0.5">
-                  Total {events.length} Nomor Perlombaan · Seluruh Sesi & Seri (Standar World Aquatics)
+            <div className="space-y-6 print:space-y-4 font-sans text-black">
+              {/* Official Meet Header */}
+              <div className="text-center pb-2 border-b-2 border-black">
+                <div className="text-[11px] font-bold tracking-widest uppercase text-black font-sans">
+                  {championship.organizer}
+                </div>
+                <h1 className="text-lg sm:text-xl font-black uppercase text-black tracking-tight font-sans mt-0.5">
+                  {championship.name}
+                </h1>
+                <div className="text-sm sm:text-base font-extrabold uppercase text-red-600 tracking-wider mt-0.5">
+                  BUKU ACARA PERTANDINGAN & SUSUNAN LINTASAN LENGKAP (START LIST)
+                </div>
+                <div className="text-[11px] text-black mt-0.5">
+                  {championship.venue} · Kolam {championship.poolLength} ({championship.poolLanes} Lintasan) · {championship.startDate} s/d {championship.endDate}
                 </div>
               </div>
 
+              {/* Event Listings */}
               {events.map((ev) => (
-                <div key={ev.id} className="space-y-3 pt-4 border-t-2 border-slate-800 print:break-inside-avoid print:break-after-page">
-                  <div className="flex items-center justify-between bg-slate-100 border border-slate-300 px-3 py-2 rounded-sm text-slate-900">
-                    <div>
-                      <span className="font-mono font-bold text-sky-700 text-xs mr-2">#{ev.eventNumber}</span>
-                      <span className="font-bold text-xs uppercase text-slate-900">{ev.title}</span>
+                <div key={ev.id} className="space-y-1.5 print:break-inside-avoid print:mb-5">
+                  {/* Event Banner */}
+                  <div className="border border-black bg-slate-50/90 px-3 py-1.5 flex flex-wrap items-center justify-between text-black font-bold text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-black text-red-700 bg-red-100 px-2 py-0.5 rounded text-xs border border-red-300">
+                        #{ev.eventNumber}
+                      </span>
+                      <span className="uppercase text-black font-extrabold text-[12px]">
+                        {ev.title}
+                      </span>
+                      <span className="text-[11px] font-semibold text-black">
+                        ({ev.gender === 'MALE' ? 'Putra' : ev.gender === 'FEMALE' ? 'Putri' : 'Campuran'} · {formatAgeGroupLabel(ev.ageGroup)})
+                      </span>
                     </div>
-                    <div className="text-right text-[11px] font-mono text-slate-600">
-                      Sesi {ev.session} · {ev.round.replace('_', ' ')} · {ev.heats.length} Seri
+                    <div className="text-[11px] font-mono text-black font-semibold">
+                      Sesi {ev.session} · {ev.round === 'TIMED_FINAL' ? 'Timed Final' : 'Babak Penyisihan'} · {ev.heats?.length || 0} Seri
+                      {ev.meetRecord && ` · Rekor: ${ev.meetRecord.time} (${ev.meetRecord.holder})`}
                     </div>
                   </div>
 
-                  {ev.heats.length === 0 ? (
-                    <div className="text-xs text-slate-400 italic p-3 text-center border border-dashed border-slate-200">
-                      Nomor lomba ini belum dijalankan auto-seeding.
+                  {/* Heats */}
+                  {(!ev.heats || ev.heats.length === 0) ? (
+                    <div className="border border-black p-4 text-xs text-slate-500 italic text-center bg-white">
+                      Nomor lomba ini belum dijalankan undian seri (auto-seeding).
                     </div>
                   ) : (
                     ev.heats.map(heat => (
-                      <div key={heat.heatNumber} className="space-y-1.5 pl-1">
-                        <div className="bg-slate-50 border-b border-slate-200 px-2 py-1 text-xs font-bold text-slate-700 uppercase flex items-center justify-between">
-                          <span>Seri {heat.heatNumber} dari {ev.heats.length}</span>
-                          <span className="font-mono text-[10px] text-slate-500">{heat.lanes.length} Perenang</span>
+                      <div key={heat.heatNumber} className="space-y-0">
+                        {/* Heat Banner */}
+                        <div className="border border-black border-b-0 bg-slate-100 px-3 py-1 text-xs font-bold text-black uppercase flex items-center justify-between">
+                          <span>SERI {heat.heatNumber} DARI {ev.heats.length}</span>
+                          <span className="font-mono text-[11px] text-black font-bold">{heat.lanes.length} PERENANG</span>
                         </div>
 
-                        <table className="w-full text-left text-xs border border-slate-200">
-                          <thead className="bg-slate-50 border-b border-slate-200 font-semibold text-slate-600 text-[10px]">
+                        {/* Starting Table */}
+                        <table className="print-start-list-table print-entry-list-table w-full text-xs border border-black border-collapse mb-3">
+                          <colgroup>
+                            <col style={{ width: '5%' }} />
+                            <col style={{ width: '11%' }} />
+                            <col style={{ width: '31%' }} />
+                            <col style={{ width: '5%' }} />
+                            <col style={{ width: '7%' }} />
+                            <col style={{ width: '9%' }} />
+                            <col style={{ width: '20%' }} />
+                            <col style={{ width: '12%' }} />
+                          </colgroup>
+                          <thead>
                             <tr>
-                              <th className="py-1 px-2 w-10 text-center border-r">Lint</th>
-                              <th className="py-1 px-2.5 border-r">Nama Perenang</th>
-                              <th className="py-1 px-2.5 border-r font-mono">No. Register</th>
-                              <th className="py-1 px-2.5 border-r">Klub / Kontingen</th>
-                              <th className="py-1 px-2.5 border-r">Kelompok Usia</th>
-                              <th className="py-1 px-2.5 font-mono text-right">Seed Time</th>
+                              <th className="border border-black px-1 py-1 text-center font-bold text-red-600">LINT</th>
+                              <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600">NO. REG</th>
+                              <th className="border border-black px-2 py-1 text-left font-bold text-red-600">NAMA LENGKAP ATLET</th>
+                              <th className="border border-black px-1 py-1 text-center font-bold text-red-600">L/P</th>
+                              <th className="border border-black px-1 py-1 text-center font-bold text-red-600">KU</th>
+                              <th className="border border-black px-1 py-1 text-center font-bold text-red-600">TGL LAHIR / UMUR</th>
+                              <th className="border border-black px-2 py-1 text-left font-bold text-red-600">KLUB RENANG</th>
+                              <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600">SEED TIME</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100 text-[11px]">
-                            {heat.lanes.map(lane => {
-                              const ath = athleteMap.get(lane.athleteId);
-                              const clb = ath ? clubMap.get(ath.clubId) : null;
-                              return (
-                                <tr key={lane.laneNumber}>
-                                  <td className="py-1 px-2 text-center font-mono font-bold border-r">{lane.laneNumber}</td>
-                                  <td className="py-1 px-2.5 font-semibold text-slate-900 border-r">{ath?.name || 'Tanpa Nama'}</td>
-                                  <td className="py-1 px-2.5 font-mono text-slate-600 border-r">{ath?.regNumber || ath?.nik || '-'}</td>
-                                  <td className="py-1 px-2.5 text-slate-700 border-r">{clb?.name || '-'} ({clb?.code || '-'})</td>
-                                  <td className="py-1 px-2.5 text-slate-600 border-r">{formatAgeGroupLabel(ath?.ageGroup || '', ath?.age)}</td>
-                                  <td className="py-1 px-2.5 font-mono font-bold text-right tabular-nums">{lane.seedTime}</td>
-                                </tr>
-                              );
-                            })}
+                          <tbody>
+                            {[...heat.lanes]
+                              .sort((a, b) => a.laneNumber - b.laneNumber)
+                              .map(lane => {
+                                const ath = athleteMap.get(lane.athleteId);
+                                const clb = ath ? clubMap.get(ath.clubId) : null;
+                                return (
+                                  <tr key={lane.laneNumber} className="hover:bg-slate-50">
+                                    <td className="border border-black px-1 py-1 text-center font-mono font-bold text-black">{lane.laneNumber}</td>
+                                    <td className="border border-black px-1.5 py-1 text-center font-mono font-bold text-black">{ath?.regNumber || ath?.nik || '-'}</td>
+                                    <td className="border border-black px-2 py-1 text-left font-bold uppercase text-black">{ath?.name || 'Tanpa Nama'}</td>
+                                    <td className="border border-black px-1 py-1 text-center font-semibold text-black">{ath?.gender === 'MALE' ? 'L' : 'P'}</td>
+                                    <td className="border border-black px-1 py-1 text-center font-medium text-black">{getKU(ath?.ageGroup || '', ath?.age || 0)}</td>
+                                    <td className="border border-black px-1 py-1 text-center font-mono text-black">{ath?.birthDate || '-'} ({ath?.age || '-'} th)</td>
+                                    <td className="border border-black px-2 py-1 text-left uppercase font-medium text-black">{clb?.name || '-'} ({clb?.code || '-'})</td>
+                                    <td className="border border-black px-1.5 py-1 text-center font-mono font-bold text-black">{lane.seedTime || 'NT'}</td>
+                                  </tr>
+                                );
+                              })}
                           </tbody>
                         </table>
                       </div>
@@ -1299,67 +1343,140 @@ export const PrintModal: React.FC = () => {
                   )}
                 </div>
               ))}
+
+              {/* Grand Total Footer */}
+              <div className="border-t-2 border-black pt-2 flex flex-wrap items-center justify-between font-bold text-xs text-black">
+                <div>
+                  JUMLAH TOTAL:{' '}
+                  <span className="font-extrabold text-red-600">
+                    {events.length} NOMOR LOMBA · {events.reduce((acc, ev) => acc + (ev.heats?.length || 0), 0)} SERI TERJADWAL
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-600">
+                  Dicetak pada {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </div>
+              </div>
             </div>
           )}
 
-          {/* DOCUMENT 1: START LIST / MEET PROGRAM (SINGLE EVENT) */}
+          {/* ========================================================================= */}
+          {/* DOCUMENT: START LIST SINGLE EVENT (LEMBAR PERTANDINGAN SATU NOMOR)        */}
+          {/* ========================================================================= */}
           {activePrintDoc === 'start_list' && targetEvent && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-300 pb-2">
-                <div>
-                  <div className="text-xs font-bold uppercase text-slate-500">LEMBAR PERTANDINGAN (START LIST)</div>
-                  <h2 className="text-base font-extrabold text-slate-900">
-                    Nomor #{targetEvent.eventNumber}: {targetEvent.title}
-                  </h2>
+            <div className="space-y-6 print:space-y-4 font-sans text-black">
+              {/* Official Meet Header */}
+              <div className="text-center pb-2 border-b-2 border-black">
+                <div className="text-[11px] font-bold tracking-widest uppercase text-black font-sans">
+                  {championship.organizer}
                 </div>
-                <div className="text-right text-xs text-slate-600 font-mono">
-                  <div>Sesi {targetEvent.session} · {targetEvent.round.replace('_', ' ')}</div>
-                  {targetEvent.meetRecord && (
-                    <div className="text-[11px] text-slate-500">
-                      Rekor: {targetEvent.meetRecord.time} ({targetEvent.meetRecord.holder})
-                    </div>
-                  )}
+                <h1 className="text-lg sm:text-xl font-black uppercase text-black tracking-tight font-sans mt-0.5">
+                  {championship.name}
+                </h1>
+                <div className="text-sm sm:text-base font-extrabold uppercase text-red-600 tracking-wider mt-0.5">
+                  DAFTAR SUSUNAN LINTASAN PERTANDINGAN (START LIST)
+                </div>
+                <div className="text-[11px] text-black mt-0.5">
+                  {championship.venue} · Kolam {championship.poolLength} ({championship.poolLanes} Lintasan) · {championship.startDate} s/d {championship.endDate}
                 </div>
               </div>
 
-              {/* Seri / Heats */}
-              {targetEvent.heats.map(heat => (
-                <div key={heat.heatNumber} className="space-y-2">
-                  <div className="bg-slate-100 px-3 py-1 text-xs font-bold text-slate-800 uppercase flex items-center justify-between">
-                    <span>Seri {heat.heatNumber} dari {targetEvent.heats.length}</span>
-                    <span className="font-mono text-[11px] text-slate-500">{heat.lanes.length} Perenang</span>
+              {/* Event Details */}
+              <div className="space-y-1.5 print:break-inside-avoid">
+                {/* Event Banner */}
+                <div className="border border-black bg-slate-50/90 px-3 py-1.5 flex flex-wrap items-center justify-between text-black font-bold text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-black text-red-700 bg-red-100 px-2 py-0.5 rounded text-xs border border-red-300">
+                      #{targetEvent.eventNumber}
+                    </span>
+                    <span className="uppercase text-black font-extrabold text-[12px]">
+                      {targetEvent.title}
+                    </span>
+                    <span className="text-[11px] font-semibold text-black">
+                      ({targetEvent.gender === 'MALE' ? 'Putra' : targetEvent.gender === 'FEMALE' ? 'Putri' : 'Campuran'} · {formatAgeGroupLabel(targetEvent.ageGroup)})
+                    </span>
                   </div>
-
-                  <table className="w-full text-left text-xs border border-slate-200">
-                    <thead className="bg-slate-50 border-b border-slate-200 font-semibold text-slate-600 text-[11px]">
-                      <tr>
-                        <th className="py-1.5 px-2 w-12 text-center border-r">Lint</th>
-                        <th className="py-1.5 px-3 border-r">Nama Perenang</th>
-                        <th className="py-1.5 px-3 border-r font-mono">No. Register</th>
-                        <th className="py-1.5 px-3 border-r">Klub / Kontingen</th>
-                        <th className="py-1.5 px-3 border-r">Kelompok Usia</th>
-                        <th className="py-1.5 px-3 font-mono text-right">Seed Time</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200">
-                      {heat.lanes.map(lane => {
-                        const ath = athleteMap.get(lane.athleteId);
-                        const clb = ath ? clubMap.get(ath.clubId) : null;
-                        return (
-                          <tr key={lane.laneNumber}>
-                            <td className="py-1.5 px-2 text-center font-mono font-bold border-r">{lane.laneNumber}</td>
-                            <td className="py-1.5 px-3 font-semibold text-slate-900 border-r">{ath?.name}</td>
-                            <td className="py-1.5 px-3 font-mono text-slate-600 border-r">{ath?.regNumber || ath?.nik || '-'}</td>
-                            <td className="py-1.5 px-3 text-slate-700 border-r">{clb?.name} ({clb?.code})</td>
-                            <td className="py-1.5 px-3 text-slate-600 border-r">{formatAgeGroupLabel(ath?.ageGroup || '', ath?.age)}</td>
-                            <td className="py-1.5 px-3 font-mono font-bold text-right tabular-nums">{lane.seedTime}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  <div className="text-[11px] font-mono text-black font-semibold">
+                    Sesi {targetEvent.session} · {targetEvent.round === 'TIMED_FINAL' ? 'Timed Final' : 'Babak Penyisihan'} · {targetEvent.heats?.length || 0} Seri
+                    {targetEvent.meetRecord && ` · Rekor: ${targetEvent.meetRecord.time} (${targetEvent.meetRecord.holder})`}
+                  </div>
                 </div>
-              ))}
+
+                {/* Heats */}
+                {(!targetEvent.heats || targetEvent.heats.length === 0) ? (
+                  <div className="border border-black p-4 text-xs text-slate-500 italic text-center bg-white">
+                    Nomor lomba ini belum dijalankan undian seri (auto-seeding).
+                  </div>
+                ) : (
+                  targetEvent.heats.map(heat => (
+                    <div key={heat.heatNumber} className="space-y-0">
+                      {/* Heat Banner */}
+                      <div className="border border-black border-b-0 bg-slate-100 px-3 py-1 text-xs font-bold text-black uppercase flex items-center justify-between">
+                        <span>SERI {heat.heatNumber} DARI {targetEvent.heats.length}</span>
+                        <span className="font-mono text-[11px] text-black font-bold">{heat.lanes.length} PERENANG</span>
+                      </div>
+
+                      {/* Starting Table */}
+                      <table className="print-start-list-table print-entry-list-table w-full text-xs border border-black border-collapse mb-3">
+                        <colgroup>
+                          <col style={{ width: '5%' }} />
+                          <col style={{ width: '11%' }} />
+                          <col style={{ width: '31%' }} />
+                          <col style={{ width: '5%' }} />
+                          <col style={{ width: '7%' }} />
+                          <col style={{ width: '9%' }} />
+                          <col style={{ width: '20%' }} />
+                          <col style={{ width: '12%' }} />
+                        </colgroup>
+                        <thead>
+                          <tr>
+                            <th className="border border-black px-1 py-1 text-center font-bold text-red-600">LINT</th>
+                            <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600">NO. REG</th>
+                            <th className="border border-black px-2 py-1 text-left font-bold text-red-600">NAMA LENGKAP ATLET</th>
+                            <th className="border border-black px-1 py-1 text-center font-bold text-red-600">L/P</th>
+                            <th className="border border-black px-1 py-1 text-center font-bold text-red-600">KU</th>
+                            <th className="border border-black px-1 py-1 text-center font-bold text-red-600">TGL LAHIR / UMUR</th>
+                            <th className="border border-black px-2 py-1 text-left font-bold text-red-600">KLUB RENANG</th>
+                            <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600">SEED TIME</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[...heat.lanes]
+                            .sort((a, b) => a.laneNumber - b.laneNumber)
+                            .map(lane => {
+                              const ath = athleteMap.get(lane.athleteId);
+                              const clb = ath ? clubMap.get(ath.clubId) : null;
+                              return (
+                                <tr key={lane.laneNumber} className="hover:bg-slate-50">
+                                  <td className="border border-black px-1 py-1 text-center font-mono font-bold text-black">{lane.laneNumber}</td>
+                                  <td className="border border-black px-1.5 py-1 text-center font-mono font-bold text-black">{ath?.regNumber || ath?.nik || '-'}</td>
+                                  <td className="border border-black px-2 py-1 text-left font-bold uppercase text-black">{ath?.name || 'Tanpa Nama'}</td>
+                                  <td className="border border-black px-1 py-1 text-center font-semibold text-black">{ath?.gender === 'MALE' ? 'L' : 'P'}</td>
+                                  <td className="border border-black px-1 py-1 text-center font-medium text-black">{getKU(ath?.ageGroup || '', ath?.age || 0)}</td>
+                                  <td className="border border-black px-1 py-1 text-center font-mono text-black">{ath?.birthDate || '-'} ({ath?.age || '-'} th)</td>
+                                  <td className="border border-black px-2 py-1 text-left uppercase font-medium text-black">{clb?.name || '-'} ({clb?.code || '-'})</td>
+                                  <td className="border border-black px-1.5 py-1 text-center font-mono font-bold text-black">{lane.seedTime || 'NT'}</td>
+                                </tr>
+                              );
+                            })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Event Sub-summary */}
+              <div className="border-t-2 border-black pt-2 flex flex-wrap items-center justify-between font-bold text-xs text-black">
+                <div>
+                  TOTAL SERI:{' '}
+                  <span className="font-extrabold text-red-600">
+                    {targetEvent.heats?.length || 0} SERI PERLOMBAAN
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-600">
+                  Dicetak pada {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </div>
+              </div>
             </div>
           )}
 
