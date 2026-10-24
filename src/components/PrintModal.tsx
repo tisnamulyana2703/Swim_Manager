@@ -345,7 +345,10 @@ export const PrintModal: React.FC = () => {
   if (!activePrintDoc) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <div 
+      id="print-modal-root"
+      className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:static print:inset-auto print:z-auto print:bg-transparent print:p-0 print:m-0 print:overflow-visible print:block print:w-full print:backdrop-blur-none"
+    >
       {/* Inline Print Styles ensuring exact visual reproduction in print */}
       <style>{`
         @media print {
@@ -353,11 +356,38 @@ export const PrintModal: React.FC = () => {
             size: A4 portrait;
             margin: 8mm 6mm;
           }
-          body {
-            background: white !important;
-            color: black !important;
+          html, body {
+            background: #ffffff !important;
+            color: #000000 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            overflow: visible !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+          }
+          header, footer, nav, main, aside, .print\:hidden, [class*="print:hidden"] {
+            display: none !important;
+          }
+          #print-modal-root {
+            position: static !important;
+            background: transparent !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            inset: auto !important;
+            display: block !important;
+            width: 100% !important;
+            overflow: visible !important;
+          }
+          .printable-content {
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+            max-height: none !important;
+            overflow: visible !important;
+            box-shadow: none !important;
+            border: none !important;
           }
           .print-entry-list-table {
             border-collapse: collapse !important;
@@ -374,28 +404,11 @@ export const PrintModal: React.FC = () => {
             border: 1px solid #000000 !important;
             color: #000000 !important;
           }
-          .print-recap-table {
-            border-collapse: collapse !important;
-            width: 100% !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
-          .print-recap-table th {
-            color: #dc2626 !important;
-            font-weight: 700 !important;
-            border: 1px solid #000000 !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          .print-recap-table td {
-            border: 1px solid #000000 !important;
-            color: #000000 !important;
-          }
         }
       `}</style>
 
       {/* Container - wider for entry list table preview */}
-      <div className={`bg-white rounded-2xl w-full shadow-2xl border border-slate-300 overflow-hidden my-4 max-h-[94vh] flex flex-col ${
+      <div className={`bg-white rounded-2xl w-full shadow-2xl border border-slate-300 overflow-hidden my-4 max-h-[94vh] flex flex-col print:shadow-none print:border-none print:rounded-none print:my-0 print:mx-0 print:max-h-none print:max-w-none print:w-full print:overflow-visible print:bg-white ${
         activePrintDoc === 'entry_list' ? 'max-w-6xl' : 'max-w-4xl'
       }`}>
         
@@ -547,7 +560,7 @@ export const PrintModal: React.FC = () => {
         )}
 
         {/* Printable Document Body */}
-        <div className="p-6 sm:p-10 overflow-y-auto printable-content font-sans text-slate-900 space-y-6">
+        <div className="p-6 sm:p-10 overflow-y-auto printable-content font-sans text-slate-900 space-y-6 print:p-0 print:m-0 print:space-y-4 print:overflow-visible print:w-full">
           
           {/* Official Letterhead (KOP SURAT RESMI) - Hidden for entry_list to match exact reference */}
           {activePrintDoc !== 'entry_list' && (

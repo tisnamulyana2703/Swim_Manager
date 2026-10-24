@@ -11,12 +11,32 @@
 }
 
 @media print {
-  body {
-    background: white !important;
-    color: black !important;
+  @page {
+    size: A4 portrait;
+    margin: 8mm 6mm;
   }
 
-  header, footer, nav, button, .print\:hidden {
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Completely hide all application elements outside print modal */
+  header,
+  footer,
+  nav,
+  main,
+  aside,
+  button,
+  .print\:hidden {
     display: none !important;
   }
 
@@ -27,10 +47,6 @@
     overflow: visible !important;
     box-shadow: none !important;
     border: none !important;
-  }
-
-  @page {
-    size: A4 portrait;
-    margin: 15mm;
+    width: 100% !important;
   }
 }
