@@ -28,6 +28,7 @@ export const PrintModal: React.FC = () => {
   } = useSwimData();
 
   const [selectedClubId, setSelectedClubId] = useState<string>('ALL');
+  const [selectedNomorEventId, setSelectedNomorEventId] = useState<string>('ALL');
   const [contactName, setContactName] = useState<string>('Budi Gunawan');
   const [contactEmail, setContactEmail] = useState<string>('Lembangswimmingclub0909@Gmail.Com');
   const [contactPhone, setContactPhone] = useState<string>('0857-9411-2141');
@@ -136,24 +137,33 @@ export const PrintModal: React.FC = () => {
     };
   }, [clubs, athletes]);
 
-  // Synchronize club selection and page orientation on open
+  // Synchronize club/event selection and page orientation on open
   useEffect(() => {
-    if (activePrintDoc === 'entry_list') {
+    if (activePrintDoc === 'entry_list' || activePrintDoc === 'nomor_list') {
       setPageOrientation('landscape');
-      if (printTargetClubId) {
-        setSelectedClubId(printTargetClubId);
-      } else {
-        const lembang = clubs.find(c => c.id === 'club-8' || c.code === 'LEMBANG');
-        if (lembang) {
-          setSelectedClubId(lembang.id);
-        } else if (clubs.length > 0) {
-          setSelectedClubId(clubs[0].id);
+      if (activePrintDoc === 'nomor_list') {
+        if (printTargetEventId) {
+          setSelectedNomorEventId(printTargetEventId);
+        } else {
+          setSelectedNomorEventId('ALL');
+        }
+      }
+      if (activePrintDoc === 'entry_list') {
+        if (printTargetClubId) {
+          setSelectedClubId(printTargetClubId);
+        } else {
+          const lembang = clubs.find(c => c.id === 'club-8' || c.code === 'LEMBANG');
+          if (lembang) {
+            setSelectedClubId(lembang.id);
+          } else if (clubs.length > 0) {
+            setSelectedClubId(clubs[0].id);
+          }
         }
       }
     } else {
       setPageOrientation('portrait');
     }
-  }, [activePrintDoc, printTargetClubId, clubs]);
+  }, [activePrintDoc, printTargetEventId, printTargetClubId, clubs]);
 
   // Sync contact details when selectedClubId changes
   useEffect(() => {
@@ -346,6 +356,95 @@ export const PrintModal: React.FC = () => {
     return rows;
   }, [activePrintDoc, athletes, selectedClubId, clubMap, eventMap]);
 
+  // Grouped events and participants for Nomor List printing
+  const nomorListEvents = useMemo(() => {
+    if (activePrintDoc !== 'nomor_list') return [];
+
+    const evList = events
+      .filter(ev => selectedNomorEventId === 'ALL' || ev.id === selectedNomorEventId)
+      .sort((a, b) => a.eventNumber - b.eventNumber);
+
+    return evList.map(ev => {
+      // Find all heat/lane mappings for this event if seeded
+      const seedingMap = new Map<string, { heat: number; lane: number }>();
+      if (ev.heats) {
+        ev.heats.forEach(h => {
+          h.lanes.forEach(l => {
+            if (l.athleteId) {
+              seedingMap.set(l.athleteId, { heat: h.heatNumber, lane: l.laneNumber });
+            }
+          });
+        });
+      }
+
+      const participants: {
+        athleteId: string;
+        regNumber: string;
+        name: string;
+        gender: 'MALE' | 'FEMALE';
+        birthDate: string;
+        age: number;
+        ageGroup: string;
+        clubName: string;
+        clubCode: string;
+        seedTime: string;
+        seedTimeMs: number;
+        heatNumber?: number;
+        laneNumber?: number;
+      }[] = [];
+
+      athletes.forEach(ath => {
+        if (!ath.registeredEvents) return;
+        const reg = ath.registeredEvents.find(r => r.eventId === ev.id);
+        if (reg) {
+          const club = clubMap.get(ath.clubId);
+          const clubName = (club?.name || 'INDEPENDEN').toUpperCase();
+          const clubCode = club?.code || 'IND';
+          const regNumber = ath.regNumber || ath.nik || (412 + participants.length).toString();
+          const seed = seedingMap.get(ath.id);
+
+          participants.push({
+            athleteId: ath.id,
+            regNumber,
+            name: ath.name.toUpperCase(),
+            gender: ath.gender,
+            birthDate: ath.birthDate,
+            age: ath.age,
+            ageGroup: ath.ageGroup,
+            clubName,
+            clubCode,
+            seedTime: (!reg.seedTime || reg.seedTime === '00:00.00' || reg.seedTime === 'NT' || reg.seedTimeMs === 0) ? 'NT' : reg.seedTime,
+            seedTimeMs: reg.seedTimeMs || 0,
+            heatNumber: seed?.heat,
+            laneNumber: seed?.lane,
+          });
+        }
+      });
+
+      // Sort participants by Seed Time ascending (NT at end)
+      participants.sort((a, b) => {
+        if (a.seedTimeMs === 0 && b.seedTimeMs !== 0) return 1;
+        if (b.seedTimeMs === 0 && a.seedTimeMs !== 0) return -1;
+        if (a.seedTimeMs !== b.seedTimeMs) return a.seedTimeMs - b.seedTimeMs;
+        return a.name.localeCompare(b.name);
+      });
+
+      const totalClubs = new Set(participants.map(p => p.clubName)).size;
+
+      return {
+        event: ev,
+        participants,
+        totalParticipants: participants.length,
+        totalClubs,
+        isSeeded: ev.status === 'SEEDED' || ev.status === 'IN_PROGRESS' || ev.status === 'COMPLETED',
+      };
+    });
+  }, [activePrintDoc, events, athletes, selectedNomorEventId, clubMap]);
+
+  const totalNomorListParticipants = useMemo(() => {
+    return nomorListEvents.reduce((acc, curr) => acc + curr.totalParticipants, 0);
+  }, [nomorListEvents]);
+
   if (!activePrintDoc) return null;
 
   return (
@@ -396,24 +495,29 @@ export const PrintModal: React.FC = () => {
             box-shadow: none !important;
             border: none !important;
           }
-          .print-entry-list-table {
+          .print-entry-list-table,
+          .print-nomor-list-table {
             border-collapse: collapse !important;
             width: 100% !important;
             max-width: 100% !important;
             table-layout: fixed !important;
             page-break-inside: auto !important;
           }
-          .print-entry-list-table thead {
+          .print-entry-list-table thead,
+          .print-nomor-list-table thead {
             display: table-header-group !important;
           }
-          .print-entry-list-table tfoot {
+          .print-entry-list-table tfoot,
+          .print-nomor-list-table tfoot {
             display: table-footer-group !important;
           }
-          .print-entry-list-table tr {
+          .print-entry-list-table tr,
+          .print-nomor-list-table tr {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
           }
-          .print-entry-list-table th {
+          .print-entry-list-table th,
+          .print-nomor-list-table th {
             color: #dc2626 !important;
             font-weight: 700 !important;
             border: 1px solid #000000 !important;
@@ -424,7 +528,8 @@ export const PrintModal: React.FC = () => {
             font-size: 10.5px !important;
             line-height: 1.15 !important;
           }
-          .print-entry-list-table td {
+          .print-entry-list-table td,
+          .print-nomor-list-table td {
             border: 1px solid #000000 !important;
             color: #000000 !important;
             padding: 3px 3px !important;
@@ -434,9 +539,9 @@ export const PrintModal: React.FC = () => {
         }
       `}</style>
 
-      {/* Container - wider for entry list table preview */}
+      {/* Container - wider for entry list and nomor list table preview */}
       <div className={`bg-white rounded-2xl w-full shadow-2xl border border-slate-300 overflow-hidden my-4 max-h-[94vh] flex flex-col print:shadow-none print:border-none print:rounded-none print:my-0 print:mx-0 print:max-h-none print:max-w-none print:w-full print:overflow-visible print:bg-white ${
-        activePrintDoc === 'entry_list' 
+        (activePrintDoc === 'entry_list' || activePrintDoc === 'nomor_list')
           ? (pageOrientation === 'landscape' ? 'max-w-[96vw] xl:max-w-[1360px]' : 'max-w-5xl') 
           : 'max-w-4xl'
       }`}>
@@ -448,9 +553,11 @@ export const PrintModal: React.FC = () => {
             <span className="font-bold text-sm">
               {activePrintDoc === 'entry_list' 
                 ? 'Pratinjau Cetak Entry List (Format Resmi PB Akuatik Indonesia)' 
+                : activePrintDoc === 'nomor_list'
+                ? 'Pratinjau Cetak Nomor List (Daftar Peserta per Nomor Lomba)'
                 : 'Pratinjau Cetak Dokumen Resmi (Format Standar A4)'}
             </span>
-            {activePrintDoc === 'entry_list' && (
+            {(activePrintDoc === 'entry_list' || activePrintDoc === 'nomor_list') && (
               <span className="hidden md:inline-flex items-center text-[10.5px] font-semibold bg-sky-950 border border-sky-600/60 text-sky-300 px-2 py-0.5 rounded-full">
                 A4 {pageOrientation === 'landscape' ? 'Lanskap (Pas Lebar Halaman)' : 'Potret'}
               </span>
@@ -542,6 +649,62 @@ export const PrintModal: React.FC = () => {
               </>
             )}
 
+            {/* Nomor List Controls */}
+            {activePrintDoc === 'nomor_list' && (
+              <>
+                {/* Orientation Selector */}
+                <div className="flex items-center bg-slate-800 rounded-lg p-0.5 text-xs border border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => setPageOrientation('landscape')}
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                      pageOrientation === 'landscape' ? 'bg-red-600 text-white font-bold shadow-xs' : 'text-slate-300 hover:text-white'
+                    }`}
+                    title="Cetak format A4 Lanskap (Lebar Penuh)"
+                  >
+                    A4 Lanskap
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPageOrientation('portrait')}
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                      pageOrientation === 'portrait' ? 'bg-red-600 text-white font-bold shadow-xs' : 'text-slate-300 hover:text-white'
+                    }`}
+                    title="Cetak format A4 Potret (Tegak)"
+                  >
+                    A4 Potret
+                  </button>
+                </div>
+
+                {/* Event Selector */}
+                <div className="flex items-center gap-1.5 bg-slate-800 rounded-lg px-2.5 py-1 text-xs">
+                  <span className="text-slate-400">Pilih Nomor:</span>
+                  <select
+                    value={selectedNomorEventId}
+                    onChange={(e) => setSelectedNomorEventId(e.target.value)}
+                    className="bg-slate-700 text-white rounded px-2 py-0.5 text-xs font-semibold focus:outline-hidden max-w-[240px] truncate"
+                  >
+                    <option value="ALL">Semua Nomor Lomba ({events.length} Nomor)</option>
+                    {events.map(ev => {
+                      const pCount = athletes.filter(a => a.registeredEvents?.some(r => r.eventId === ev.id)).length;
+                      return (
+                        <option key={ev.id} value={ev.id}>
+                          #{ev.eventNumber} - {ev.title} ({pCount} Peserta)
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 border border-slate-700 text-xs rounded-lg">
+                  <span className="text-slate-400">Total Peserta:</span>
+                  <span className="font-mono font-bold text-amber-300">
+                    {totalNomorListParticipants} Atlet
+                  </span>
+                </div>
+              </>
+            )}
+
             {(activePrintDoc === 'start_list' || activePrintDoc === 'start_list_all') && (
               <div className="flex items-center bg-slate-800 rounded-lg p-0.5 text-xs">
                 <button
@@ -619,8 +782,8 @@ export const PrintModal: React.FC = () => {
         {/* Printable Document Body */}
         <div className="p-6 sm:p-10 overflow-y-auto printable-content font-sans text-slate-900 space-y-6 print:p-0 print:m-0 print:space-y-4 print:overflow-visible print:w-full">
           
-          {/* Official Letterhead (KOP SURAT RESMI) - Hidden for entry_list to match exact reference */}
-          {activePrintDoc !== 'entry_list' && (
+          {/* Official Letterhead (KOP SURAT RESMI) - Hidden for entry_list and nomor_list as they have dedicated official headers */}
+          {activePrintDoc !== 'entry_list' && activePrintDoc !== 'nomor_list' && (
             <div className="border-b-2 border-slate-900 pb-4 text-center space-y-1">
               <div className="text-xs font-bold tracking-widest uppercase text-slate-700">
                 {championship.organizer}
@@ -903,6 +1066,164 @@ export const PrintModal: React.FC = () => {
                 </div>
                 <div className="text-slate-600">
                   Dicetak pada {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* DOCUMENT: NOMOR LIST (DAFTAR PESERTA DIKELOMPOKKAN PER NOMOR LOMBA)      */}
+          {/* ========================================================================= */}
+          {activePrintDoc === 'nomor_list' && (
+            <div className="space-y-6 print:space-y-4 font-sans text-black">
+              {/* Official Header */}
+              <div className="text-center pb-2 border-b-2 border-black">
+                <div className="text-[11px] font-bold tracking-widest uppercase text-black font-sans">
+                  {championship.organizer}
+                </div>
+                <h1 className="text-lg sm:text-xl font-black uppercase text-black tracking-tight font-sans mt-0.5">
+                  {championship.name}
+                </h1>
+                <div className="text-sm sm:text-base font-extrabold uppercase text-red-600 tracking-wider mt-0.5">
+                  DAFTAR PESERTA PER NOMOR LOMBA (NOMOR LIST)
+                </div>
+                <div className="text-[11px] text-black mt-0.5">
+                  {championship.venue} · Kolam {championship.poolLength} ({championship.poolLanes} Lintasan) · {championship.startDate} s/d {championship.endDate}
+                </div>
+              </div>
+
+              {/* List of Events & Participant Tables */}
+              {nomorListEvents.length === 0 ? (
+                <div className="border border-black p-8 text-center text-slate-500 italic">
+                  Tidak ada nomor lomba yang dipilih atau tidak ada peserta terdaftar.
+                </div>
+              ) : (
+                nomorListEvents.map(({ event: ev, participants, totalParticipants, totalClubs }) => (
+                  <div key={ev.id} className="space-y-1.5 print:break-inside-avoid print:mb-5">
+                    {/* Event Banner */}
+                    <div className="border border-black bg-slate-50/90 px-3 py-1.5 flex flex-wrap items-center justify-between text-black font-bold text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-black text-red-700 bg-red-100 px-2 py-0.5 rounded text-xs border border-red-300">
+                          #{ev.eventNumber}
+                        </span>
+                        <span className="uppercase text-black font-extrabold text-[12px]">
+                          {ev.title}
+                        </span>
+                        <span className="text-[11px] font-semibold text-black">
+                          ({ev.gender === 'MALE' ? 'Putra' : ev.gender === 'FEMALE' ? 'Putri' : 'Campuran'} · {formatAgeGroupLabel(ev.ageGroup)})
+                        </span>
+                      </div>
+                      <div className="text-[11px] font-mono text-black font-semibold">
+                        Sesi {ev.session} · {ev.round === 'TIMED_FINAL' ? 'Timed Final' : 'Babak Penyisihan'} · {totalParticipants} Peserta · {ev.heats?.length || 0} Seri
+                      </div>
+                    </div>
+
+                    {/* Participant Table */}
+                    <table className="print-nomor-list-table print-entry-list-table w-full text-xs border border-black border-collapse">
+                      <colgroup>
+                        <col style={{ width: '3.5%' }} />
+                        <col style={{ width: '9%' }} />
+                        <col style={{ width: '27%' }} />
+                        <col style={{ width: '4%' }} />
+                        <col style={{ width: '6%' }} />
+                        <col style={{ width: '8.5%' }} />
+                        <col style={{ width: '4.5%' }} />
+                        <col style={{ width: '20%' }} />
+                        <col style={{ width: '9.5%' }} />
+                        <col style={{ width: '8%' }} />
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th className="border border-black px-1 py-1 text-center font-bold text-red-600">NO</th>
+                          <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600">NO. REG</th>
+                          <th className="border border-black px-2 py-1 text-left font-bold text-red-600">NAMA LENGKAP ATLET</th>
+                          <th className="border border-black px-1 py-1 text-center font-bold text-red-600">L/P</th>
+                          <th className="border border-black px-1 py-1 text-center font-bold text-red-600">KU</th>
+                          <th className="border border-black px-1 py-1 text-center font-bold text-red-600">TGL LAHIR</th>
+                          <th className="border border-black px-1 py-1 text-center font-bold text-red-600">UMUR</th>
+                          <th className="border border-black px-2 py-1 text-left font-bold text-red-600">KLUB RENANG</th>
+                          <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600">SEED TIME</th>
+                          <th className="border border-black px-1 py-1 text-center font-bold text-red-600">SERI/LN</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {participants.length === 0 ? (
+                          <tr>
+                            <td colSpan={10} className="border border-black py-3 text-center text-slate-500 italic">
+                              Belum ada peserta yang mendaftar pada nomor lomba ini.
+                            </td>
+                          </tr>
+                        ) : (
+                          participants.map((p, pIdx) => (
+                            <tr key={p.athleteId} className="hover:bg-slate-50">
+                              <td className="border border-black px-1 py-1 text-center font-mono font-medium">{pIdx + 1}</td>
+                              <td className="border border-black px-1.5 py-1 text-center font-mono font-bold">{p.regNumber}</td>
+                              <td className="border border-black px-2 py-1 text-left font-bold uppercase">{p.name}</td>
+                              <td className="border border-black px-1 py-1 text-center font-semibold">{p.gender === 'MALE' ? 'L' : 'P'}</td>
+                              <td className="border border-black px-1 py-1 text-center font-medium">{getKU(p.ageGroup, p.age)}</td>
+                              <td className="border border-black px-1 py-1 text-center font-mono">{p.birthDate || '-'}</td>
+                              <td className="border border-black px-1 py-1 text-center font-mono font-medium">{p.age}</td>
+                              <td className="border border-black px-2 py-1 text-left uppercase font-medium">{p.clubName}</td>
+                              <td className="border border-black px-1.5 py-1 text-center font-mono font-bold">{p.seedTime || 'NT'}</td>
+                              <td className="border border-black px-1 py-1 text-center font-mono font-semibold">
+                                {p.heatNumber !== undefined && p.laneNumber !== undefined ? `S${p.heatNumber}/L${p.laneNumber}` : '-'}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                      <tfoot>
+                        <tr className="bg-slate-50 font-bold border-t border-black text-black">
+                          <td colSpan={8} className="border border-black px-2 py-1 text-right font-extrabold uppercase text-[10.5px]">
+                            SUBTOTAL PESERTA NOMOR LOMBA #{ev.eventNumber}:
+                          </td>
+                          <td colSpan={2} className="border border-black px-2 py-1 text-center font-black text-red-600 text-[10.5px]">
+                            {totalParticipants} ATLET ({totalClubs} KLUB)
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                ))
+              )}
+
+              {/* Grand Total Footer */}
+              <div className="border-t-2 border-black pt-2 flex flex-wrap items-center justify-between font-bold text-xs text-black">
+                <div>
+                  JUMLAH TOTAL:{' '}
+                  <span className="font-extrabold text-red-600">
+                    {nomorListEvents.length} NOMOR LOMBA · {totalNomorListParticipants} ENTRI PESERTA
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-600">
+                  Dicetak pada {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </div>
+              </div>
+
+              {/* Official Signatures */}
+              <div className="pt-6 grid grid-cols-3 gap-6 text-center text-xs text-black font-sans print:pt-4 print:break-inside-avoid">
+                <div>
+                  <div className="font-semibold">Technical Delegate,</div>
+                  <div className="h-16 flex items-end justify-center font-bold underline">
+                    {championship.technicalDelegate}
+                  </div>
+                  <div className="text-[10px] text-slate-500">World Aquatics / PB Akuatik</div>
+                </div>
+
+                <div>
+                  <div className="font-semibold">Referee (Wasit Ketua),</div>
+                  <div className="h-16 flex items-end justify-center font-bold underline">
+                    {championship.referee}
+                  </div>
+                  <div className="text-[10px] text-slate-500">Wasit Nasional</div>
+                </div>
+
+                <div>
+                  <div className="font-semibold">Chief Recorder / Sekretariat,</div>
+                  <div className="h-16 flex items-end justify-center font-bold underline">
+                    {championship.chiefRecorder}
+                  </div>
+                  <div className="text-[10px] text-slate-500">Panitia Perlombaan</div>
                 </div>
               </div>
             </div>

@@ -48,6 +48,7 @@ export type ActiveTab =
 
 export type PrintDocumentType = 
   | 'entry_list'
+  | 'nomor_list'
   | 'start_list' 
   | 'start_list_all'
   | 'result_sheet' 
