@@ -33,7 +33,8 @@ export const AthletesView: React.FC = () => {
     deleteAthlete,
     deleteAllAthletes,
     addClub,
-    deleteClub
+    deleteClub,
+    customAgeGroups
   } = useSwimData();
 
   const [activeSubTab, setActiveSubTab] = useState<'athletes' | 'clubs'>('athletes');
@@ -71,8 +72,9 @@ export const AthletesView: React.FC = () => {
   }, [athBirthDate, championship.cutoffDate]);
 
   const previewKU = useMemo(() => {
-    return determineAgeGroup(previewAge);
-  }, [previewAge]);
+    const matched = customAgeGroups.find(ag => ag.isActive && previewAge >= ag.minAge && previewAge <= ag.maxAge);
+    return matched ? matched.name : determineAgeGroup(previewAge);
+  }, [previewAge, customAgeGroups]);
 
   // Filtered Athletes
   const filteredAthletes = useMemo(() => {
@@ -84,17 +86,13 @@ export const AthletesView: React.FC = () => {
 
       let matchKU = filterKU === 'ALL';
       if (!matchKU) {
-        if (filterKU === 'AGE_14_ABOVE') {
-          matchKU = ath.age >= 14 || ath.ageGroup === 'AGE_14_ABOVE' || ath.ageGroup === 'AGE_14' || ath.ageGroup === 'AGE_15' || ath.ageGroup === 'AGE_16_18' || ath.ageGroup === 'AGE_19_ABOVE';
-        } else if (filterKU === 'AGE_6_UNDER') {
-          matchKU = ath.age <= 6 || ath.ageGroup === 'AGE_6_UNDER';
-        } else if (ath.ageGroup === filterKU) {
-          matchKU = true;
-        } else if (filterKU.startsWith('AGE_')) {
-          const targetAge = parseInt(filterKU.replace('AGE_', ''), 10);
-          if (!isNaN(targetAge) && ath.age === targetAge) {
+        const ag = customAgeGroups.find(a => a.code === filterKU);
+        if (ag) {
+          if (ath.ageGroup === filterKU || (ath.age >= ag.minAge && ath.age <= ag.maxAge)) {
             matchKU = true;
           }
+        } else if (ath.ageGroup === filterKU) {
+          matchKU = true;
         }
       }
 
@@ -103,7 +101,7 @@ export const AthletesView: React.FC = () => {
 
       return matchSearch && matchKU && matchGender && matchClub;
     });
-  }, [athletes, searchQuery, filterKU, filterGender, filterClub]);
+  }, [athletes, searchQuery, filterKU, filterGender, filterClub, customAgeGroups]);
 
   const handleOpenAddAthlete = () => {
     setEditingAthleteId(null);
@@ -304,19 +302,14 @@ export const AthletesView: React.FC = () => {
               <select
                 value={filterKU}
                 onChange={e => setFilterKU(e.target.value)}
-                className="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden"
+                className="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden font-medium"
               >
                 <option value="ALL">Semua Kelompok Usia</option>
-                <option value="AGE_6_UNDER">A</option>
-                <option value="AGE_7">B</option>
-                <option value="AGE_8">C</option>
-                <option value="AGE_9">D</option>
-                <option value="AGE_10">E</option>
-                <option value="AGE_11">F</option>
-                <option value="AGE_12">G</option>
-                <option value="AGE_13">H</option>
-                <option value="AGE_14_ABOVE">I</option>
-                <option value="OPEN">Terbuka (Open)</option>
+                {customAgeGroups.filter(ag => ag.isActive).map(ag => (
+                  <option key={ag.code} value={ag.code}>
+                    {ag.name} {ag.label && ag.label !== ag.name ? `(${ag.label})` : ''}
+                  </option>
+                ))}
               </select>
 
               <select

@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 
 export const EntryListView: React.FC = () => {
-  const { athletes, events, clubs, championship, setActiveTab, setSelectedEventId, openPrintModal } = useSwimData();
+  const { athletes, events, clubs, championship, setActiveTab, setSelectedEventId, openPrintModal, customAgeGroups } = useSwimData();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEventFilter, setSelectedEventFilter] = useState<string>('ALL');
@@ -181,19 +181,14 @@ export const EntryListView: React.FC = () => {
 
       // Age filter
       if (selectedAgeFilter !== 'ALL') {
-        if (selectedAgeFilter === 'AGE_14_ABOVE') {
-          if (entry.age < 14 && entry.ageGroup !== 'AGE_14_ABOVE' && entry.ageGroup !== 'AGE_14' && entry.ageGroup !== 'AGE_15' && entry.ageGroup !== 'AGE_16_18' && entry.ageGroup !== 'AGE_19_ABOVE') {
+        const ag = customAgeGroups.find(a => a.code === selectedAgeFilter);
+        if (ag) {
+          if (entry.ageGroup === selectedAgeFilter) {
+            // direct code match
+          } else if (entry.age >= ag.minAge && entry.age <= ag.maxAge) {
+            // age range match
+          } else {
             return false;
-          }
-        } else if (selectedAgeFilter === 'AGE_6_UNDER') {
-          if (entry.age > 6 && entry.ageGroup !== 'AGE_6_UNDER') {
-            return false;
-          }
-        } else if (selectedAgeFilter.startsWith('AGE_')) {
-          if (entry.ageGroup !== selectedAgeFilter) {
-            // Also check raw age for precision
-            const targetAge = parseInt(selectedAgeFilter.replace('AGE_', ''), 10);
-            if (!isNaN(targetAge) && entry.age !== targetAge) return false;
           }
         } else if (entry.ageGroup !== selectedAgeFilter) {
           return false;
@@ -202,7 +197,7 @@ export const EntryListView: React.FC = () => {
 
       return true;
     });
-  }, [allEntries, searchTerm, selectedEventFilter, selectedGenderFilter, selectedClubFilter, selectedAgeFilter]);
+  }, [allEntries, searchTerm, selectedEventFilter, selectedGenderFilter, selectedClubFilter, selectedAgeFilter, customAgeGroups]);
 
   // Unique athletes in filtered set
   const uniqueAthletesCount = useMemo(() => {
@@ -380,19 +375,14 @@ export const EntryListView: React.FC = () => {
             <select
               value={selectedAgeFilter}
               onChange={e => setSelectedAgeFilter(e.target.value)}
-              className="w-full py-1.5 px-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-sky-500"
+              className="w-full py-1.5 px-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-sky-500 font-medium"
             >
               <option value="ALL">Semua Kelompok Usia</option>
-              <option value="AGE_6_UNDER">A</option>
-              <option value="AGE_7">B</option>
-              <option value="AGE_8">C</option>
-              <option value="AGE_9">D</option>
-              <option value="AGE_10">E</option>
-              <option value="AGE_11">F</option>
-              <option value="AGE_12">G</option>
-              <option value="AGE_13">H</option>
-              <option value="AGE_14_ABOVE">I</option>
-              <option value="OPEN">Terbuka (Open)</option>
+              {customAgeGroups.filter(ag => ag.isActive).map(ag => (
+                <option key={ag.code} value={ag.code}>
+                  {ag.name} {ag.label && ag.label !== ag.name ? `(${ag.label})` : ''}
+                </option>
+              ))}
             </select>
           </div>
 

@@ -29,7 +29,11 @@ export const EventsView: React.FC = () => {
     runAutoSeedingForAllEvents,
     setSelectedEventId, 
     setActiveTab, 
-    openPrintModal 
+    openPrintModal,
+    customStrokes,
+    customAgeGroups,
+    getStrokeLabel,
+    getAgeGroupLabel
   } = useSwimData();
 
   const [showAddModal, setShowAddModal] = useState(false);
@@ -49,8 +53,11 @@ export const EventsView: React.FC = () => {
     e.preventDefault();
 
     const genderText = gender === 'MALE' ? 'Putra' : gender === 'FEMALE' ? 'Putri' : 'Mix';
-    const kuText = formatAgeGroupLabel(ageGroup);
-    const title = `${distance}m ${STROKE_LABELS[stroke]} ${genderText} ${kuText}`;
+    const strokeObj = customStrokes.find(s => s.code === stroke);
+    const strokeText = strokeObj ? strokeObj.name : STROKE_LABELS[stroke] || stroke;
+    const agObj = customAgeGroups.find(a => a.code === ageGroup);
+    const kuText = agObj ? agObj.name : formatAgeGroupLabel(ageGroup);
+    const title = `${distance}m ${strokeText} ${genderText} ${kuText}`;
 
     addEvent({
       eventNumber: Number(eventNumber),
@@ -147,11 +154,11 @@ export const EventsView: React.FC = () => {
                       </div>
                     </td>
                     <td className="py-3.5 px-4">
-                      <span className="font-medium text-slate-800">{STROKE_LABELS[event.stroke]}</span>
+                      <span className="font-medium text-slate-800">{getStrokeLabel(event.stroke)}</span>
                       <span className="block text-[11px] text-slate-500 font-mono">{event.distance} Meter</span>
                     </td>
                     <td className="py-3.5 px-4 font-semibold text-slate-700">
-                      {formatAgeGroupLabel(event.ageGroup)}
+                      {getAgeGroupLabel(event.ageGroup)}
                     </td>
                     <td className="py-3.5 px-4 font-mono tabular-nums">
                       <span className="font-bold text-slate-900">{registeredCount}</span> atlet
@@ -295,15 +302,11 @@ export const EventsView: React.FC = () => {
                   <select
                     value={stroke}
                     onChange={e => setStroke(e.target.value as Stroke)}
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-hidden focus:border-sky-500"
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-hidden focus:border-sky-500 font-medium"
                   >
-                    <option value="FREESTYLE">Gaya Bebas</option>
-                    <option value="BACKSTROKE">Gaya Punggung</option>
-                    <option value="BREASTSTROKE">Gaya Dada</option>
-                    <option value="BUTTERFLY">Gaya Kupu-kupu</option>
-                    <option value="INDIVIDUAL_MEDLEY">Gaya Ganti Perorangan</option>
-                    <option value="RELAY_FREESTYLE">Estafet Gaya Bebas</option>
-                    <option value="RELAY_MEDLEY">Estafet Gaya Ganti</option>
+                    {customStrokes.filter(s => s.isActive).map(s => (
+                      <option key={s.code} value={s.code}>{s.name}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -329,18 +332,11 @@ export const EventsView: React.FC = () => {
                   <select
                     value={ageGroup}
                     onChange={e => setAgeGroup(e.target.value as AgeGroupCode)}
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-hidden focus:border-sky-500"
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-hidden focus:border-sky-500 font-medium"
                   >
-                    <option value="AGE_6_UNDER">A</option>
-                    <option value="AGE_7">B</option>
-                    <option value="AGE_8">C</option>
-                    <option value="AGE_9">D</option>
-                    <option value="AGE_10">E</option>
-                    <option value="AGE_11">F</option>
-                    <option value="AGE_12">G</option>
-                    <option value="AGE_13">H</option>
-                    <option value="AGE_14_ABOVE">I</option>
-                    <option value="OPEN">Terbuka (Open)</option>
+                    {customAgeGroups.filter(ag => ag.isActive).map(ag => (
+                      <option key={ag.code} value={ag.code}>{ag.name}</option>
+                    ))}
                   </select>
                 </div>
 

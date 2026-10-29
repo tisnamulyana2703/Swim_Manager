@@ -12,7 +12,17 @@ export type Stroke =
   | 'BUTTERFLY' 
   | 'INDIVIDUAL_MEDLEY' 
   | 'RELAY_FREESTYLE' 
-  | 'RELAY_MEDLEY';
+  | 'RELAY_MEDLEY'
+  | string;
+
+export interface StrokeConfig {
+  code: string;
+  name: string;
+  shortName: string;
+  isRelay?: boolean;
+  isActive: boolean;
+  description?: string;
+}
 
 export type AgeGroupCode = 
   | 'AGE_6_UNDER' 
@@ -35,7 +45,18 @@ export type AgeGroupCode =
   | 'KU_II' 
   | 'KU_III' 
   | 'KU_IV' 
-  | 'KU_V';
+  | 'KU_V'
+  | string;
+
+export interface CustomAgeGroupConfig {
+  code: string;
+  name: string;
+  label?: string;
+  minAge: number;
+  maxAge: number;
+  description?: string;
+  isActive: boolean;
+}
 
 export interface AgeGroupConfig {
   code: AgeGroupCode;

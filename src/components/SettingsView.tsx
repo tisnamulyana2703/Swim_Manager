@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { useSwimData } from '../context/SwimDataContext';
-import { ChampionshipInfo, LaneDetailConfig, LaneSeedingMode } from '../types/swim';
+import { ChampionshipInfo, CustomAgeGroupConfig, LaneDetailConfig, LaneSeedingMode, StrokeConfig } from '../types/swim';
 import { getDefaultLaneColor, getLaneOrder } from '../utils/seeding';
 import { 
   Settings, 
@@ -32,7 +32,11 @@ import {
   EyeOff,
   Radio,
   Activity,
-  ArrowRight
+  ArrowRight,
+  Plus,
+  Trash2,
+  Edit2,
+  X
 } from 'lucide-react';
 
 interface PresetItem {
@@ -186,7 +190,17 @@ export const SettingsView: React.FC = () => {
     clubs,
     openPrintModal,
     setActiveTab,
-    runAutoSeedingForAllEvents
+    runAutoSeedingForAllEvents,
+    customStrokes,
+    customAgeGroups,
+    addCustomStroke,
+    updateCustomStroke,
+    deleteCustomStroke,
+    resetDefaultStrokes,
+    addCustomAgeGroup,
+    updateCustomAgeGroup,
+    deleteCustomAgeGroup,
+    resetDefaultAgeGroups,
   } = useSwimData();
 
   // Local state for editable form
@@ -203,9 +217,110 @@ export const SettingsView: React.FC = () => {
     return base;
   });
 
-  const [activeSubTab, setActiveSubTab] = useState<'info' | 'pool' | 'officials' | 'timing'>('info');
+  const [activeSubTab, setActiveSubTab] = useState<'info' | 'pool' | 'officials' | 'timing' | 'categories'>('info');
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+
+  // Modal states for Stroke
+  const [showStrokeModal, setShowStrokeModal] = useState(false);
+  const [editingStrokeCode, setEditingStrokeCode] = useState<string | null>(null);
+  const [strokeCodeInput, setStrokeCodeInput] = useState('');
+  const [strokeNameInput, setStrokeNameInput] = useState('');
+  const [strokeShortInput, setStrokeShortInput] = useState('');
+  const [strokeIsRelayInput, setStrokeIsRelayInput] = useState(false);
+  const [strokeDescInput, setStrokeDescInput] = useState('');
+
+  // Modal states for Age Group
+  const [showAgeGroupModal, setShowAgeGroupModal] = useState(false);
+  const [editingAgeGroupCode, setEditingAgeGroupCode] = useState<string | null>(null);
+  const [agCodeInput, setAgCodeInput] = useState('');
+  const [agNameInput, setAgNameInput] = useState('');
+  const [agLabelInput, setAgLabelInput] = useState('');
+  const [agMinAgeInput, setAgMinAgeInput] = useState<number>(0);
+  const [agMaxAgeInput, setAgMaxAgeInput] = useState<number>(99);
+  const [agDescInput, setAgDescInput] = useState('');
+
+  const handleOpenAddStroke = () => {
+    setEditingStrokeCode(null);
+    setStrokeCodeInput('');
+    setStrokeNameInput('');
+    setStrokeShortInput('');
+    setStrokeIsRelayInput(false);
+    setStrokeDescInput('');
+    setShowStrokeModal(true);
+  };
+
+  const handleOpenEditStroke = (s: StrokeConfig) => {
+    setEditingStrokeCode(s.code);
+    setStrokeCodeInput(s.code);
+    setStrokeNameInput(s.name);
+    setStrokeShortInput(s.shortName);
+    setStrokeIsRelayInput(!!s.isRelay);
+    setStrokeDescInput(s.description || '');
+    setShowStrokeModal(true);
+  };
+
+  const handleSaveStroke = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!strokeNameInput.trim()) return;
+    const finalCode = (editingStrokeCode || strokeCodeInput.trim() || strokeNameInput.trim().toUpperCase().replace(/[^A-Z0-9]/g, '_')).toUpperCase();
+    const finalShort = strokeShortInput.trim() || strokeNameInput.trim().slice(0, 8);
+
+    addCustomStroke({
+      code: finalCode,
+      name: strokeNameInput.trim(),
+      shortName: finalShort,
+      isRelay: strokeIsRelayInput,
+      isActive: true,
+      description: strokeDescInput.trim(),
+    });
+    setShowStrokeModal(false);
+    setSaveMessage(`Gaya renang "${strokeNameInput}" berhasil disimpan!`);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3000);
+  };
+
+  const handleOpenAddAgeGroup = () => {
+    setEditingAgeGroupCode(null);
+    setAgCodeInput('');
+    setAgNameInput('');
+    setAgLabelInput('');
+    setAgMinAgeInput(0);
+    setAgMaxAgeInput(99);
+    setAgDescInput('');
+    setShowAgeGroupModal(true);
+  };
+
+  const handleOpenEditAgeGroup = (ag: CustomAgeGroupConfig) => {
+    setEditingAgeGroupCode(ag.code);
+    setAgCodeInput(ag.code);
+    setAgNameInput(ag.name);
+    setAgLabelInput(ag.label || ag.name);
+    setAgMinAgeInput(ag.minAge);
+    setAgMaxAgeInput(ag.maxAge);
+    setAgDescInput(ag.description || '');
+    setShowAgeGroupModal(true);
+  };
+
+  const handleSaveAgeGroup = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!agNameInput.trim()) return;
+    const finalCode = (editingAgeGroupCode || agCodeInput.trim() || `AGE_${agNameInput.trim().toUpperCase().replace(/[^A-Z0-9]/g, '_')}`).toUpperCase();
+
+    addCustomAgeGroup({
+      code: finalCode,
+      name: agNameInput.trim(),
+      label: agLabelInput.trim() || agNameInput.trim(),
+      minAge: Number(agMinAgeInput) || 0,
+      maxAge: Number(agMaxAgeInput) || 99,
+      isActive: true,
+      description: agDescInput.trim(),
+    });
+    setShowAgeGroupModal(false);
+    setSaveMessage(`Kelompok usia "${agNameInput}" berhasil disimpan!`);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3000);
+  };
 
   const poolLanes = formData.poolLanes || 8;
   const activeLanes = formData.activeLanes || Array.from({ length: poolLanes }, (_, i) => i + 1);
@@ -524,6 +639,22 @@ export const SettingsView: React.FC = () => {
           >
             <Cpu className="w-4 h-4" />
             <span>4. Alat Pencatat Waktu (Timing System)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSubTab('categories')}
+            className={`py-3.5 px-3 sm:px-4 text-xs font-semibold border-b-2 flex items-center gap-2 transition-colors whitespace-nowrap cursor-pointer ${
+              activeSubTab === 'categories'
+                ? 'border-sky-600 text-sky-700 bg-white'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Sliders className="w-4 h-4" />
+            <span>5. Gaya Renang & Kelompok Usia</span>
+            <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-800 rounded-full">
+              {customAgeGroups.length} KU · {customStrokes.length} Gaya
+            </span>
           </button>
         </div>
 
@@ -1508,6 +1639,313 @@ export const SettingsView: React.FC = () => {
             </div>
           )}
 
+          {/* TAB 5: GAYA RENANG & KELOMPOK USIA (CUSTOM) */}
+          {activeSubTab === 'categories' && (
+            <div className="space-y-8">
+              {/* Header Tab Explanation */}
+              <div className="border-b border-slate-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <Sliders className="w-5 h-5 text-sky-600" />
+                    <span>Pengaturan Kustomisasi Gaya Renang & Kelompok Usia</span>
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Konfigurasi daftar gaya renang dan kelompok usia sesuai aturan Technical Meeting (TM) kejuaraan. Perubahan langsung otomatis digunakan di formulir Tambah Nomor Lomba, Filter Atlet, dan Berkas Pertandingan.
+                  </p>
+                </div>
+              </div>
+
+              {/* SEKSI 1: GAYA RENANG */}
+              <div className="space-y-4 bg-slate-50/60 p-5 rounded-2xl border border-slate-200">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+                      <span>Daftar Gaya Renang ({customStrokes.length} Gaya Terdaftar)</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Kelola nama, kode sistem, dan tipe nomor (perorangan / estafet).
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm('Kembalikan daftar gaya renang ke pengaturan standar World Aquatics?')) {
+                          resetDefaultStrokes();
+                        }
+                      }}
+                      className="px-2.5 py-1.5 text-xs text-slate-600 hover:text-slate-900 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      title="Reset ke standar resmi FINA/World Aquatics"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Reset Standar</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleOpenAddStroke}
+                      className="px-3 py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Tambah Gaya Renang</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Table of Strokes */}
+                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-semibold text-[11px] uppercase tracking-wider">
+                        <tr>
+                          <th className="py-2.5 px-3">Kode Sistem</th>
+                          <th className="py-2.5 px-3">Nama Gaya Renang</th>
+                          <th className="py-2.5 px-3">Singkatan</th>
+                          <th className="py-2.5 px-3">Tipe</th>
+                          <th className="py-2.5 px-3">Status</th>
+                          <th className="py-2.5 px-3 text-right">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {customStrokes.map(st => (
+                          <tr key={st.code} className={`hover:bg-slate-50/70 ${!st.isActive ? 'opacity-50 bg-slate-50' : ''}`}>
+                            <td className="py-2.5 px-3 font-mono font-bold text-sky-800 text-[11px]">
+                              {st.code}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <span className="font-semibold text-slate-900">{st.name}</span>
+                              {st.description && (
+                                <span className="block text-[10px] text-slate-400 mt-0.5">{st.description}</span>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-[11px]">
+                                {st.shortName}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3">
+                              {st.isRelay ? (
+                                <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-purple-100 text-purple-700">
+                                  Estafet
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-sky-100 text-sky-700">
+                                  Perorangan
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <button
+                                type="button"
+                                onClick={() => updateCustomStroke(st.code, { isActive: !st.isActive })}
+                                className={`px-2 py-0.5 text-[10px] font-bold rounded-full transition-colors cursor-pointer ${
+                                  st.isActive 
+                                    ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' 
+                                    : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                                }`}
+                              >
+                                {st.isActive ? 'Aktif' : 'Non-Aktif'}
+                              </button>
+                            </td>
+                            <td className="py-2.5 px-3 text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditStroke(st)}
+                                  className="p-1.5 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-md transition-colors cursor-pointer"
+                                  title="Edit Gaya"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (customStrokes.length <= 1) {
+                                      alert('Minimal 1 gaya renang harus tetap ada!');
+                                      return;
+                                    }
+                                    if (confirm(`Hapus gaya renang "${st.name}"?`)) {
+                                      deleteCustomStroke(st.code);
+                                    }
+                                  }}
+                                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
+                                  title="Hapus Gaya"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              {/* SEKSI 2: KELOMPOK USIA (AGE GROUPS) */}
+              <div className="space-y-4 bg-slate-50/60 p-5 rounded-2xl border border-slate-200">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                      <span>Daftar Kelompok Usia ({customAgeGroups.length} Kategori Terdaftar)</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Tentukan label kode kelompok usia (contoh: A-I, KU I-V, atau Per Usia).
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Preset Picker */}
+                    <div className="flex items-center gap-1 bg-white p-1 rounded-lg border border-slate-200 shadow-2xs">
+                      <span className="text-[10px] text-slate-400 font-semibold px-1.5 uppercase">Preset:</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm('Terapkan template kelompok usia format huruf A - I?')) {
+                            resetDefaultAgeGroups('A_I');
+                          }
+                        }}
+                        className="px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 rounded cursor-pointer transition-colors"
+                        title="Format A (≤6) s/d I (14+) & Open"
+                      >
+                        Format A - I
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm('Terapkan template kelompok usia standar PB Akuatik (KU I - KU V & Senior)?')) {
+                            resetDefaultAgeGroups('PRSI_KU');
+                          }
+                        }}
+                        className="px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 rounded cursor-pointer transition-colors"
+                        title="Format Senior & KU I - KU V"
+                      >
+                        Standar PRSI (KU I-V)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm('Terapkan template kelompok usia per usia tunggal (Usia ≤6 s/d 19+)?')) {
+                            resetDefaultAgeGroups('PER_AGE');
+                          }
+                        }}
+                        className="px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 rounded cursor-pointer transition-colors"
+                        title="Format Usia Tunggal 6 - 19+"
+                      >
+                        Per Usia Tunggal
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleOpenAddAgeGroup}
+                      className="px-3 py-1.5 text-xs font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Tambah Kelompok Usia</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Table of Age Groups */}
+                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-semibold text-[11px] uppercase tracking-wider">
+                        <tr>
+                          <th className="py-2.5 px-3">Kode Sistem</th>
+                          <th className="py-2.5 px-3">Nama / Label Kategori</th>
+                          <th className="py-2.5 px-3">Rentang Usia (Min - Max)</th>
+                          <th className="py-2.5 px-3">Deskripsi / Keterangan</th>
+                          <th className="py-2.5 px-3">Status</th>
+                          <th className="py-2.5 px-3 text-right">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {customAgeGroups.map(ag => (
+                          <tr key={ag.code} className={`hover:bg-slate-50/70 ${!ag.isActive ? 'opacity-50 bg-slate-50' : ''}`}>
+                            <td className="py-2.5 px-3 font-mono font-bold text-amber-800 text-[11px]">
+                              {ag.code}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <span className="font-extrabold text-slate-900 text-sm px-2.5 py-0.5 bg-slate-100 rounded-md border border-slate-200">
+                                {ag.name}
+                              </span>
+                              {ag.label && ag.label !== ag.name && (
+                                <span className="text-[11px] text-slate-500 ml-2">({ag.label})</span>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-3 font-mono">
+                              {ag.minAge === 0 && ag.maxAge >= 90 ? (
+                                <span className="text-slate-500">Semua Usia (0 - ∞)</span>
+                              ) : ag.minAge === ag.maxAge ? (
+                                <span className="font-bold text-slate-800">Tepat {ag.minAge} Tahun</span>
+                              ) : ag.maxAge >= 90 ? (
+                                <span className="font-bold text-slate-800">≥ {ag.minAge} Tahun</span>
+                              ) : ag.minAge === 0 ? (
+                                <span className="font-bold text-slate-800">≤ {ag.maxAge} Tahun</span>
+                              ) : (
+                                <span className="font-bold text-slate-800">{ag.minAge} - {ag.maxAge} Tahun</span>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-3 text-slate-500 text-[11px]">
+                              {ag.description || '-'}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <button
+                                type="button"
+                                onClick={() => updateCustomAgeGroup(ag.code, { isActive: !ag.isActive })}
+                                className={`px-2 py-0.5 text-[10px] font-bold rounded-full transition-colors cursor-pointer ${
+                                  ag.isActive 
+                                    ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' 
+                                    : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                                }`}
+                              >
+                                {ag.isActive ? 'Aktif' : 'Non-Aktif'}
+                              </button>
+                            </td>
+                            <td className="py-2.5 px-3 text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditAgeGroup(ag)}
+                                  className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors cursor-pointer"
+                                  title="Edit Kelompok Usia"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (customAgeGroups.length <= 1) {
+                                      alert('Minimal 1 kelompok usia harus tetap ada!');
+                                      return;
+                                    }
+                                    if (confirm(`Hapus kelompok usia "${ag.name}"?`)) {
+                                      deleteCustomAgeGroup(ag.code);
+                                    }
+                                  }}
+                                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
+                                  title="Hapus Kelompok Usia"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Form Actions Footer */}
           <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="text-xs text-slate-500">
@@ -1617,6 +2055,246 @@ export const SettingsView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal Add / Edit Gaya Renang */}
+      {showStrokeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-4 bg-sky-900 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-sky-400" />
+                <h3 className="text-sm font-bold">
+                  {editingStrokeCode ? 'Edit Gaya Renang' : 'Tambah Gaya Renang Baru'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowStrokeModal(false)}
+                className="text-slate-300 hover:text-white p-1 rounded-md cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveStroke} className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Nama Gaya Renang <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={strokeNameInput}
+                  onChange={e => {
+                    setStrokeNameInput(e.target.value);
+                    if (!editingStrokeCode && !strokeCodeInput) {
+                      setStrokeCodeInput(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '_'));
+                    }
+                  }}
+                  placeholder="Contoh: Gaya Bebas, Papan Seluncur (Kaki)"
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Kode Sistem <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    disabled={!!editingStrokeCode}
+                    value={strokeCodeInput}
+                    onChange={e => setStrokeCodeInput(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''))}
+                    placeholder="Contoh: FREESTYLE"
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg font-mono focus:outline-hidden focus:ring-2 focus:ring-sky-500 disabled:bg-slate-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Singkatan / Kode Cetak
+                  </label>
+                  <input
+                    type="text"
+                    value={strokeShortInput}
+                    onChange={e => setStrokeShortInput(e.target.value)}
+                    placeholder="Contoh: Bebas, FR"
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Deskripsi / Keterangan (Opsional)
+                </label>
+                <input
+                  type="text"
+                  value={strokeDescInput}
+                  onChange={e => setStrokeDescInput(e.target.value)}
+                  placeholder="Contoh: Gaya Bebas resmi standar World Aquatics"
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <div className="pt-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={strokeIsRelayInput}
+                    onChange={e => setStrokeIsRelayInput(e.target.checked)}
+                    className="rounded text-sky-600 focus:ring-sky-500 w-4 h-4 cursor-pointer"
+                  />
+                  <span className="text-xs text-slate-700 font-semibold">
+                    Ini adalah nomor Estafet (Relay)
+                  </span>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowStrokeModal(false)}
+                  className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg shadow-xs cursor-pointer"
+                >
+                  Simpan Gaya
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Add / Edit Kelompok Usia */}
+      {showAgeGroupModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-4 bg-amber-900 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-amber-400" />
+                <h3 className="text-sm font-bold">
+                  {editingAgeGroupCode ? 'Edit Kelompok Usia' : 'Tambah Kelompok Usia Baru'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAgeGroupModal(false)}
+                className="text-slate-300 hover:text-white p-1 rounded-md cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveAgeGroup} className="p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Label Kategori <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={agNameInput}
+                    onChange={e => {
+                      setAgNameInput(e.target.value);
+                      if (!editingAgeGroupCode && !agCodeInput) {
+                        setAgCodeInput(`AGE_${e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`);
+                      }
+                    }}
+                    placeholder="Contoh: A, B, I, KU I"
+                    className="w-full px-3 py-2 text-xs font-extrabold border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">Ditampilkan di dropdown</span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Kode Sistem <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    disabled={!!editingAgeGroupCode}
+                    value={agCodeInput}
+                    onChange={e => setAgCodeInput(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''))}
+                    placeholder="Contoh: AGE_6_UNDER"
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg font-mono focus:outline-hidden focus:ring-2 focus:ring-amber-500 disabled:bg-slate-100"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Usia Minimum (Tahun) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={99}
+                    required
+                    value={agMinAgeInput}
+                    onChange={e => setAgMinAgeInput(Number(e.target.value))}
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg font-mono focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Usia Maksimum (Tahun) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={99}
+                    required
+                    value={agMaxAgeInput}
+                    onChange={e => setAgMaxAgeInput(Number(e.target.value))}
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg font-mono focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Keterangan / Deskripsi
+                </label>
+                <input
+                  type="text"
+                  value={agDescInput}
+                  onChange={e => setAgDescInput(e.target.value)}
+                  placeholder="Contoh: Usia 6 Tahun dan di bawahnya"
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowAgeGroupModal(false)}
+                  className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-xs font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-lg shadow-xs cursor-pointer"
+                >
+                  Simpan Kelompok Usia
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

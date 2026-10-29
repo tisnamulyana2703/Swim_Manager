@@ -35,7 +35,11 @@ export const NomorListView: React.FC = () => {
     championship, 
     setSelectedEventId, 
     setActiveTab,
-    openPrintModal 
+    openPrintModal,
+    customStrokes,
+    customAgeGroups,
+    getStrokeLabel,
+    getAgeGroupLabel
   } = useSwimData();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -51,16 +55,7 @@ export const NomorListView: React.FC = () => {
 
   // Stroke labels in Indonesian
   const strokeLabel = (stroke: string) => {
-    switch (stroke) {
-      case 'FREESTYLE': return 'Gaya Bebas';
-      case 'BREASTSTROKE': return 'Gaya Dada';
-      case 'BACKSTROKE': return 'Gaya Punggung';
-      case 'BUTTERFLY': return 'Gaya Kupu-kupu';
-      case 'INDIVIDUAL_MEDLEY': return 'Gaya Ganti Perorangan';
-      case 'RELAY_FREESTYLE': return 'Estafet Gaya Bebas';
-      case 'RELAY_MEDLEY': return 'Estafet Gaya Ganti';
-      default: return stroke;
-    }
+    return getStrokeLabel(stroke);
   };
 
   // Build a mapped lookup for event seeding: eventId -> Map<athleteId, { heat: number, lane: number, status: string }>
@@ -501,14 +496,12 @@ export const NomorListView: React.FC = () => {
             <select
               value={selectedStrokeFilter}
               onChange={e => setSelectedStrokeFilter(e.target.value)}
-              className="w-full py-1.5 px-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-red-500"
+              className="w-full py-1.5 px-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-red-500 font-medium"
             >
               <option value="ALL">Semua Gaya</option>
-              <option value="FREESTYLE">Gaya Bebas</option>
-              <option value="BREASTSTROKE">Gaya Dada</option>
-              <option value="BACKSTROKE">Gaya Punggung</option>
-              <option value="BUTTERFLY">Gaya Kupu-kupu</option>
-              <option value="INDIVIDUAL_MEDLEY">Gaya Ganti Perorangan</option>
+              {customStrokes.map(s => (
+                <option key={s.code} value={s.code}>{s.name}</option>
+              ))}
             </select>
           </div>
         </div>

@@ -1192,3 +1192,55 @@ export const INITIAL_INCIDENTS: IncidentReport[] = [
     signedByRef: true,
   },
 ];
+
+export const INITIAL_STROKES = [
+  { code: 'FREESTYLE', name: 'Gaya Bebas', shortName: 'Bebas', isActive: true, isRelay: false, description: 'Gaya Bebas standar World Aquatics' },
+  { code: 'BACKSTROKE', name: 'Gaya Punggung', shortName: 'Punggung', isActive: true, isRelay: false, description: 'Gaya Punggung standar World Aquatics' },
+  { code: 'BREASTSTROKE', name: 'Gaya Dada', shortName: 'Dada', isActive: true, isRelay: false, description: 'Gaya Dada standar World Aquatics' },
+  { code: 'BUTTERFLY', name: 'Gaya Kupu-kupu', shortName: 'Kupu', isActive: true, isRelay: false, description: 'Gaya Kupu-kupu standar World Aquatics' },
+  { code: 'INDIVIDUAL_MEDLEY', name: 'Gaya Ganti Perorangan', shortName: 'Ganti', isActive: true, isRelay: false, description: 'Gaya Ganti Perorangan (IM)' },
+  { code: 'RELAY_FREESTYLE', name: 'Estafet Gaya Bebas', shortName: 'Est. Bebas', isActive: true, isRelay: true, description: 'Estafet 4x Gaya Bebas' },
+  { code: 'RELAY_MEDLEY', name: 'Estafet Gaya Ganti', shortName: 'Est. Ganti', isActive: true, isRelay: true, description: 'Estafet 4x Gaya Ganti' },
+  { code: 'KICKBOARD', name: 'Papan Seluncur (Kaki Bebas)', shortName: 'Papan', isActive: true, isRelay: false, description: 'Nomor Sprint Pemula / Kaki Bebas' },
+];
+
+export const PRESET_AGE_GROUPS_A_I = [
+  { code: 'AGE_6_UNDER', name: 'A', label: 'A (Usia ≤6 Tahun)', minAge: 0, maxAge: 6, isActive: true, description: 'Perenang usia 6 tahun dan di bawahnya' },
+  { code: 'AGE_7', name: 'B', label: 'B (Usia 7 Tahun)', minAge: 7, maxAge: 7, isActive: true, description: 'Perenang usia 7 tahun' },
+  { code: 'AGE_8', name: 'C', label: 'C (Usia 8 Tahun)', minAge: 8, maxAge: 8, isActive: true, description: 'Perenang usia 8 tahun' },
+  { code: 'AGE_9', name: 'D', label: 'D (Usia 9 Tahun)', minAge: 9, maxAge: 9, isActive: true, description: 'Perenang usia 9 tahun' },
+  { code: 'AGE_10', name: 'E', label: 'E (Usia 10 Tahun)', minAge: 10, maxAge: 10, isActive: true, description: 'Perenang usia 10 tahun' },
+  { code: 'AGE_11', name: 'F', label: 'F (Usia 11 Tahun)', minAge: 11, maxAge: 11, isActive: true, description: 'Perenang usia 11 tahun' },
+  { code: 'AGE_12', name: 'G', label: 'G (Usia 12 Tahun)', minAge: 12, maxAge: 12, isActive: true, description: 'Perenang usia 12 tahun' },
+  { code: 'AGE_13', name: 'H', label: 'H (Usia 13 Tahun)', minAge: 13, maxAge: 13, isActive: true, description: 'Perenang usia 13 tahun' },
+  { code: 'AGE_14_ABOVE', name: 'I', label: 'I (Usia 14+ Tahun)', minAge: 14, maxAge: 99, isActive: true, description: 'Perenang usia 14 tahun ke atas' },
+  { code: 'OPEN', name: 'Terbuka (Open)', label: 'Terbuka (Open)', minAge: 0, maxAge: 99, isActive: true, description: 'Kategori terbuka tanpa batasan umur' },
+];
+
+export const PRESET_AGE_GROUPS_PRSI_KU = [
+  { code: 'SENIOR', name: 'Senior', label: 'Senior (19+ Tahun)', minAge: 19, maxAge: 99, isActive: true, description: 'Perenang usia 19 tahun ke atas' },
+  { code: 'KU_I', name: 'KU I', label: 'KU I (16-18 Tahun)', minAge: 16, maxAge: 18, isActive: true, description: 'Perenang usia 16 sampai 18 tahun' },
+  { code: 'KU_II', name: 'KU II', label: 'KU II (14-15 Tahun)', minAge: 14, maxAge: 15, isActive: true, description: 'Perenang usia 14 sampai 15 tahun' },
+  { code: 'KU_III', name: 'KU III', label: 'KU III (12-13 Tahun)', minAge: 12, maxAge: 13, isActive: true, description: 'Perenang usia 12 sampai 13 tahun' },
+  { code: 'KU_IV', name: 'KU IV', label: 'KU IV (10-11 Tahun)', minAge: 10, maxAge: 11, isActive: true, description: 'Perenang usia 10 sampai 11 tahun' },
+  { code: 'KU_V', name: 'KU V', label: 'KU V (≤9 Tahun)', minAge: 0, maxAge: 9, isActive: true, description: 'Perenang usia 9 tahun dan di bawahnya' },
+  { code: 'OPEN', name: 'Terbuka (Open)', label: 'Terbuka (Open)', minAge: 0, maxAge: 99, isActive: true, description: 'Kategori terbuka tanpa batasan umur' },
+];
+
+export const PRESET_AGE_GROUPS_PER_AGE = [
+  { code: 'AGE_6_UNDER', name: 'Usia ≤6 Tahun', label: 'Usia ≤6 Tahun', minAge: 0, maxAge: 6, isActive: true, description: 'Kelompok usia 6 tahun dan di bawahnya' },
+  { code: 'AGE_7', name: 'Usia 7 Tahun', label: 'Usia 7 Tahun', minAge: 7, maxAge: 7, isActive: true, description: 'Kelompok usia 7 tahun' },
+  { code: 'AGE_8', name: 'Usia 8 Tahun', label: 'Usia 8 Tahun', minAge: 8, maxAge: 8, isActive: true, description: 'Kelompok usia 8 tahun' },
+  { code: 'AGE_9', name: 'Usia 9 Tahun', label: 'Usia 9 Tahun', minAge: 9, maxAge: 9, isActive: true, description: 'Kelompok usia 9 tahun' },
+  { code: 'AGE_10', name: 'Usia 10 Tahun', label: 'Usia 10 Tahun', minAge: 10, maxAge: 10, isActive: true, description: 'Kelompok usia 10 tahun' },
+  { code: 'AGE_11', name: 'Usia 11 Tahun', label: 'Usia 11 Tahun', minAge: 11, maxAge: 11, isActive: true, description: 'Kelompok usia 11 tahun' },
+  { code: 'AGE_12', name: 'Usia 12 Tahun', label: 'Usia 12 Tahun', minAge: 12, maxAge: 12, isActive: true, description: 'Kelompok usia 12 tahun' },
+  { code: 'AGE_13', name: 'Usia 13 Tahun', label: 'Usia 13 Tahun', minAge: 13, maxAge: 13, isActive: true, description: 'Kelompok usia 13 tahun' },
+  { code: 'AGE_14', name: 'Usia 14 Tahun', label: 'Usia 14 Tahun', minAge: 14, maxAge: 14, isActive: true, description: 'Kelompok usia 14 tahun' },
+  { code: 'AGE_15', name: 'Usia 15 Tahun', label: 'Usia 15 Tahun', minAge: 15, maxAge: 15, isActive: true, description: 'Kelompok usia 15 tahun' },
+  { code: 'AGE_16_18', name: 'Usia 16-18 Tahun', label: 'Usia 16-18 Tahun', minAge: 16, maxAge: 18, isActive: true, description: 'Kelompok usia 16 s/d 18 tahun' },
+  { code: 'AGE_19_ABOVE', name: 'Usia 19+ Tahun', label: 'Usia 19+ Tahun', minAge: 19, maxAge: 99, isActive: true, description: 'Kelompok usia 19 tahun ke atas' },
+  { code: 'OPEN', name: 'Terbuka (Open)', label: 'Terbuka (Open)', minAge: 0, maxAge: 99, isActive: true, description: 'Kategori terbuka tanpa batasan umur' },
+];
+
+export const INITIAL_CUSTOM_AGE_GROUPS = PRESET_AGE_GROUPS_A_I;

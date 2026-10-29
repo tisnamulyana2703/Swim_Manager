@@ -11,10 +11,12 @@ import {
   ChampionshipInfo, 
   Club, 
   ClubMedalTally, 
+  CustomAgeGroupConfig,
   Heat, 
   IncidentReport, 
   LaneAllocation, 
   OfficialMinutes, 
+  StrokeConfig,
   SwimEvent, 
   SwimmerStatus 
 } from '../types/swim';
@@ -22,9 +24,14 @@ import {
   INITIAL_ATHLETES, 
   INITIAL_CHAMPIONSHIP, 
   INITIAL_CLUBS, 
+  INITIAL_CUSTOM_AGE_GROUPS,
   INITIAL_EVENTS, 
   INITIAL_INCIDENTS, 
-  INITIAL_OFFICIAL_MINUTES 
+  INITIAL_OFFICIAL_MINUTES,
+  INITIAL_STROKES,
+  PRESET_AGE_GROUPS_A_I,
+  PRESET_AGE_GROUPS_PER_AGE,
+  PRESET_AGE_GROUPS_PRSI_KU
 } from '../data/sampleData';
 import { autoSeedEvent, manualLaneReassign } from '../utils/seeding';
 import { calculateBestSwimmers, calculateClubMedalTally, calculateEventResults } from '../utils/scoring';
@@ -143,6 +150,20 @@ interface SwimDataContextType {
   bestSwimmers: BestSwimmer[];
   recordBreakers: { eventTitle: string; athleteName: string; clubName: string; oldRecord: string; newTime: string }[];
 
+  // Custom Strokes & Age Groups
+  customStrokes: StrokeConfig[];
+  customAgeGroups: CustomAgeGroupConfig[];
+  addCustomStroke: (stroke: StrokeConfig) => void;
+  updateCustomStroke: (code: string, updates: Partial<StrokeConfig>) => void;
+  deleteCustomStroke: (code: string) => void;
+  resetDefaultStrokes: () => void;
+  addCustomAgeGroup: (ageGroup: CustomAgeGroupConfig) => void;
+  updateCustomAgeGroup: (code: string, updates: Partial<CustomAgeGroupConfig>) => void;
+  deleteCustomAgeGroup: (code: string) => void;
+  resetDefaultAgeGroups: (preset?: 'A_I' | 'PRSI_KU' | 'PER_AGE') => void;
+  getStrokeLabel: (code: string) => string;
+  getAgeGroupLabel: (code: string, age?: number) => string;
+
   // Data persistence
   resetToDefaultData: () => void;
   exportDatabaseJSON: () => void;
@@ -206,6 +227,16 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return saved ? JSON.parse(saved) : INITIAL_OFFICIAL_MINUTES;
   });
 
+  const [customStrokes, setCustomStrokes] = useState<StrokeConfig[]>(() => {
+    const saved = localStorage.getItem(`${STORAGE_KEY}_strokes`);
+    return saved ? JSON.parse(saved) : INITIAL_STROKES;
+  });
+
+  const [customAgeGroups, setCustomAgeGroups] = useState<CustomAgeGroupConfig[]>(() => {
+    const saved = localStorage.getItem(`${STORAGE_KEY}_age_groups`);
+    return saved ? JSON.parse(saved) : INITIAL_CUSTOM_AGE_GROUPS;
+  });
+
   // Persist to local storage
   useEffect(() => {
     localStorage.setItem(`${STORAGE_KEY}_championship`, JSON.stringify(championship));
@@ -230,6 +261,84 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     localStorage.setItem(`${STORAGE_KEY}_minutes`, JSON.stringify(officialMinutes));
   }, [officialMinutes]);
+
+  useEffect(() => {
+    localStorage.setItem(`${STORAGE_KEY}_strokes`, JSON.stringify(customStrokes));
+  }, [customStrokes]);
+
+  useEffect(() => {
+    localStorage.setItem(`${STORAGE_KEY}_age_groups`, JSON.stringify(customAgeGroups));
+  }, [customAgeGroups]);
+
+  // Custom stroke handlers
+  const addCustomStroke = (stroke: StrokeConfig) => {
+    setCustomStrokes(prev => {
+      const idx = prev.findIndex(s => s.code.toUpperCase() === stroke.code.toUpperCase());
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = stroke;
+        return copy;
+      }
+      return [...prev, stroke];
+    });
+  };
+
+  const updateCustomStroke = (code: string, updates: Partial<StrokeConfig>) => {
+    setCustomStrokes(prev => prev.map(s => s.code === code ? { ...s, ...updates } : s));
+  };
+
+  const deleteCustomStroke = (code: string) => {
+    setCustomStrokes(prev => prev.filter(s => s.code !== code));
+  };
+
+  const resetDefaultStrokes = () => {
+    setCustomStrokes(INITIAL_STROKES);
+    localStorage.removeItem(`${STORAGE_KEY}_strokes`);
+  };
+
+  // Custom age group handlers
+  const addCustomAgeGroup = (ageGroup: CustomAgeGroupConfig) => {
+    setCustomAgeGroups(prev => {
+      const idx = prev.findIndex(a => a.code.toUpperCase() === ageGroup.code.toUpperCase());
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = ageGroup;
+        return copy;
+      }
+      return [...prev, ageGroup];
+    });
+  };
+
+  const updateCustomAgeGroup = (code: string, updates: Partial<CustomAgeGroupConfig>) => {
+    setCustomAgeGroups(prev => prev.map(a => a.code === code ? { ...a, ...updates } : a));
+  };
+
+  const deleteCustomAgeGroup = (code: string) => {
+    setCustomAgeGroups(prev => prev.filter(a => a.code !== code));
+  };
+
+  const resetDefaultAgeGroups = (preset: 'A_I' | 'PRSI_KU' | 'PER_AGE' = 'A_I') => {
+    if (preset === 'PRSI_KU') {
+      setCustomAgeGroups(PRESET_AGE_GROUPS_PRSI_KU);
+    } else if (preset === 'PER_AGE') {
+      setCustomAgeGroups(PRESET_AGE_GROUPS_PER_AGE);
+    } else {
+      setCustomAgeGroups(PRESET_AGE_GROUPS_A_I);
+    }
+    localStorage.removeItem(`${STORAGE_KEY}_age_groups`);
+  };
+
+  const getStrokeLabel = (code: string): string => {
+    const s = customStrokes.find(st => st.code === code);
+    return s ? s.name : code;
+  };
+
+  const getAgeGroupLabel = (code: string, age?: number): string => {
+    const ag = customAgeGroups.find(a => a.code === code);
+    if (ag) return ag.name;
+    if (age !== undefined && age > 0) return `Usia ${age} Thn`;
+    return code || '-';
+  };
 
   const openPrintModal = (docType: PrintDocumentType, targetEventId?: string, targetClubId?: string) => {
     setActivePrintDoc(docType);
@@ -700,6 +809,10 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.removeItem(`${STORAGE_KEY}_events`);
     localStorage.removeItem(`${STORAGE_KEY}_incidents`);
     localStorage.removeItem(`${STORAGE_KEY}_minutes`);
+    localStorage.removeItem(`${STORAGE_KEY}_strokes`);
+    localStorage.removeItem(`${STORAGE_KEY}_age_groups`);
+    setCustomStrokes(INITIAL_STROKES);
+    setCustomAgeGroups(INITIAL_CUSTOM_AGE_GROUPS);
   };
 
   const exportDatabaseJSON = () => {
@@ -712,6 +825,8 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       events,
       incidents,
       officialMinutes,
+      customStrokes,
+      customAgeGroups,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -732,6 +847,8 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setEvents(data.events || []);
         setIncidents(data.incidents || []);
         setOfficialMinutes(data.officialMinutes || INITIAL_OFFICIAL_MINUTES);
+        if (Array.isArray(data.customStrokes)) setCustomStrokes(data.customStrokes);
+        if (Array.isArray(data.customAgeGroups)) setCustomAgeGroups(data.customAgeGroups);
         return true;
       }
       return false;
@@ -782,6 +899,18 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         clubMedalTally,
         bestSwimmers,
         recordBreakers,
+        customStrokes,
+        customAgeGroups,
+        addCustomStroke,
+        updateCustomStroke,
+        deleteCustomStroke,
+        resetDefaultStrokes,
+        addCustomAgeGroup,
+        updateCustomAgeGroup,
+        deleteCustomAgeGroup,
+        resetDefaultAgeGroups,
+        getStrokeLabel,
+        getAgeGroupLabel,
         resetToDefaultData,
         exportDatabaseJSON,
         importDatabaseJSON,
