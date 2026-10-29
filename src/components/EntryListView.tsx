@@ -181,7 +181,15 @@ export const EntryListView: React.FC = () => {
 
       // Age filter
       if (selectedAgeFilter !== 'ALL') {
-        if (selectedAgeFilter.startsWith('AGE_')) {
+        if (selectedAgeFilter === 'AGE_14_ABOVE') {
+          if (entry.age < 14 && entry.ageGroup !== 'AGE_14_ABOVE' && entry.ageGroup !== 'AGE_14' && entry.ageGroup !== 'AGE_15' && entry.ageGroup !== 'AGE_16_18' && entry.ageGroup !== 'AGE_19_ABOVE') {
+            return false;
+          }
+        } else if (selectedAgeFilter === 'AGE_6_UNDER') {
+          if (entry.age > 6 && entry.ageGroup !== 'AGE_6_UNDER') {
+            return false;
+          }
+        } else if (selectedAgeFilter.startsWith('AGE_')) {
           if (entry.ageGroup !== selectedAgeFilter) {
             // Also check raw age for precision
             const targetAge = parseInt(selectedAgeFilter.replace('AGE_', ''), 10);
@@ -375,18 +383,15 @@ export const EntryListView: React.FC = () => {
               className="w-full py-1.5 px-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-sky-500"
             >
               <option value="ALL">Semua Kelompok Usia</option>
-              <option value="AGE_6_UNDER">Usia ≤6 Tahun</option>
-              <option value="AGE_7">Usia 7 Tahun</option>
-              <option value="AGE_8">Usia 8 Tahun</option>
-              <option value="AGE_9">Usia 9 Tahun</option>
-              <option value="AGE_10">Usia 10 Tahun</option>
-              <option value="AGE_11">Usia 11 Tahun</option>
-              <option value="AGE_12">Usia 12 Tahun</option>
-              <option value="AGE_13">Usia 13 Tahun</option>
-              <option value="AGE_14">Usia 14 Tahun</option>
-              <option value="AGE_15">Usia 15 Tahun</option>
-              <option value="AGE_16_18">Usia 16-18 Tahun</option>
-              <option value="AGE_19_ABOVE">Usia 19+ Tahun (Senior)</option>
+              <option value="AGE_6_UNDER">A</option>
+              <option value="AGE_7">B</option>
+              <option value="AGE_8">C</option>
+              <option value="AGE_9">D</option>
+              <option value="AGE_10">E</option>
+              <option value="AGE_11">F</option>
+              <option value="AGE_12">G</option>
+              <option value="AGE_13">H</option>
+              <option value="AGE_14_ABOVE">I</option>
               <option value="OPEN">Terbuka (Open)</option>
             </select>
           </div>

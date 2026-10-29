@@ -7,6 +7,7 @@ import { AgeGroupCode, AgeGroupConfig, DQViolation, Stroke } from '../types/swim
 
 export const AGE_GROUPS: AgeGroupConfig[] = [
   { code: 'OPEN', name: 'Terbuka / Semua Usia (Open)', minAge: 0, maxAge: 99, description: 'Kategori Terbuka Tanpa Batasan Usia' },
+  { code: 'AGE_14_ABOVE', name: 'Usia 14+ Tahun (Kategori I)', minAge: 14, maxAge: 99, description: 'Atlet Usia 14 Tahun ke Atas' },
   { code: 'AGE_19_ABOVE', name: 'Usia 19+ Tahun (Senior)', minAge: 19, maxAge: 99, description: 'Atlet Usia 19 Tahun ke Atas' },
   { code: 'AGE_16_18', name: 'Usia 16-18 Tahun (Taruna)', minAge: 16, maxAge: 18, description: 'Kelompok Usia 16 s/d 18 Tahun' },
   { code: 'AGE_15', name: 'Usia 15 Tahun', minAge: 15, maxAge: 15, description: 'Kelompok Usia Tepat 15 Tahun' },
@@ -45,6 +46,7 @@ export function formatAgeGroupLabel(code: string, age?: number): string {
     case 'AGE_15': return 'Usia 15 Thn';
     case 'AGE_16_18': return 'Usia 16-18 Thn';
     case 'AGE_19_ABOVE': return 'Usia 19+ Thn';
+    case 'AGE_14_ABOVE': return 'Usia 14+ Thn';
     case 'OPEN': return 'Terbuka';
     case 'KU_I': return 'Usia 16-18 Thn';
     case 'KU_II': return 'Usia 14-15 Thn';

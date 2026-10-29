@@ -27,6 +27,7 @@ export type AgeGroupCode =
   | 'AGE_15' 
   | 'AGE_16_18' 
   | 'AGE_19_ABOVE' 
+  | 'AGE_14_ABOVE'
   | 'OPEN'
   // Legacy aliases for backwards compatibility
   | 'SENIOR' 
