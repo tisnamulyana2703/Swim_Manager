@@ -143,25 +143,7 @@ export const BukuAcaraView: React.FC = () => {
             </div>
           </div>
 
-          {/* Key Officials Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-slate-600 mt-4 bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-left">
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase font-bold block">Technical Delegate:</span>
-              <span className="font-semibold text-slate-800">{championship.technicalDelegate || '-'}</span>
-            </div>
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase font-bold block">Wasit (Referee):</span>
-              <span className="font-semibold text-slate-800">{championship.referee || '-'}</span>
-            </div>
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase font-bold block">Starter:</span>
-              <span className="font-semibold text-slate-800">{championship.starter || '-'}</span>
-            </div>
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase font-bold block">Ketua Pencatat:</span>
-              <span className="font-semibold text-slate-800">{championship.chiefRecorder || '-'}</span>
-            </div>
-          </div>
+
         </div>
 
         {/* List of Events in Meet Program */}
