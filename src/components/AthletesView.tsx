@@ -17,7 +17,8 @@ import {
   Check, 
   Sparkles,
   Edit2,
-  FileSpreadsheet
+  FileSpreadsheet,
+  AlertTriangle
 } from 'lucide-react';
 import { ExcelImportModal } from './ExcelImportModal';
 
@@ -30,6 +31,7 @@ export const AthletesView: React.FC = () => {
     addAthlete, 
     updateAthlete, 
     deleteAthlete,
+    deleteAllAthletes,
     addClub,
     deleteClub
   } = useSwimData();
@@ -43,6 +45,8 @@ export const AthletesView: React.FC = () => {
   // Modal Athlete
   const [showAthleteModal, setShowAthleteModal] = useState(false);
   const [showExcelModal, setShowExcelModal] = useState(false);
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+  const [includeClubsInDelete, setIncludeClubsInDelete] = useState(false);
   const [editingAthleteId, setEditingAthleteId] = useState<string | null>(null);
   const [athName, setAthName] = useState('');
   const [athRegNumber, setAthRegNumber] = useState('');
@@ -225,6 +229,17 @@ export const AthletesView: React.FC = () => {
           {activeSubTab === 'athletes' ? (
             <div className="flex items-center gap-2">
               <button
+                type="button"
+                onClick={() => setShowDeleteAllModal(true)}
+                disabled={athletes.length === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 hover:border-rose-600 text-xs font-semibold rounded-lg shadow-xs transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Hapus seluruh data atlet pendaftar"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Hapus All Data</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setShowExcelModal(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors cursor-pointer"
                 title="Impor daftar atlet dari berkas Excel (.xlsx, .xls, .csv)"
@@ -233,6 +248,7 @@ export const AthletesView: React.FC = () => {
                 <span>Impor Excel</span>
               </button>
               <button
+                type="button"
                 onClick={handleOpenAddAthlete}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors cursor-pointer"
               >
@@ -241,13 +257,26 @@ export const AthletesView: React.FC = () => {
               </button>
             </div>
           ) : (
-            <button
-              onClick={() => setShowClubModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors"
-            >
-              <Building2 className="w-3.5 h-3.5" />
-              <span>Tambah Klub</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteAllModal(true)}
+                disabled={athletes.length === 0 && clubs.length === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 hover:border-rose-600 text-xs font-semibold rounded-lg shadow-xs transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Hapus seluruh data pendaftar & klub"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Hapus All Data</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowClubModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors cursor-pointer"
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                <span>Tambah Klub</span>
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -747,6 +776,72 @@ export const AthletesView: React.FC = () => {
         isOpen={showExcelModal}
         onClose={() => setShowExcelModal(false)}
       />
+
+      {/* Delete All Data Confirmation Modal */}
+      {showDeleteAllModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="p-6">
+              <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center mx-auto mb-4 text-rose-600">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 text-center mb-1">
+                Hapus Seluruh Data Pendaftar?
+              </h3>
+              <p className="text-xs text-slate-600 text-center mb-4">
+                Tindakan ini akan menghapus <strong>{athletes.length} atlet</strong> pendaftar secara permanen beserta seluruh entri nomor lomba yang diikuti.
+              </p>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 mb-4 space-y-1">
+                <div className="font-semibold flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span>Peringatan Penting</span>
+                </div>
+                <p className="text-[11px] text-amber-700">
+                  Data yang dihapus tidak dapat dipulihkan. Pengundian seri (heat) yang telah berjalan juga akan dikosongkan.
+                </p>
+              </div>
+
+              <label className="flex items-start gap-2.5 p-3 rounded-lg border border-slate-200 bg-slate-50 cursor-pointer mb-5 hover:bg-slate-100 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={includeClubsInDelete}
+                  onChange={e => setIncludeClubsInDelete(e.target.checked)}
+                  className="rounded border-slate-300 text-rose-600 focus:ring-rose-500 mt-0.5"
+                />
+                <div className="text-xs text-slate-700">
+                  <span className="font-semibold block">Kosongkan juga data klub renang</span>
+                  <span className="text-[11px] text-slate-500">Hapus seluruh ({clubs.length}) klub terdaftar di database</span>
+                </div>
+              </label>
+
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteAllModal(false);
+                    setIncludeClubsInDelete(false);
+                  }}
+                  className="px-4 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    deleteAllAthletes(includeClubsInDelete);
+                    setShowDeleteAllModal(false);
+                    setIncludeClubsInDelete(false);
+                  }}
+                  className="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-xs transition-colors cursor-pointer"
+                >
+                  Ya, Hapus Semua Data
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

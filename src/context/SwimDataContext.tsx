@@ -97,6 +97,7 @@ interface SwimDataContextType {
   }) => void;
   updateAthlete: (id: string, updates: Partial<Athlete>) => void;
   deleteAthlete: (id: string) => void;
+  deleteAllAthletes: (clearClubsToo?: boolean) => void;
   importBulkAthletes: (newRows: {
     nik?: string;
     regNumber?: string;
@@ -312,6 +313,18 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const deleteAthlete = (id: string) => {
     setAthletes(prev => prev.filter(a => a.id !== id));
+  };
+
+  const deleteAllAthletes = (clearClubsToo: boolean = false) => {
+    setAthletes([]);
+    setEvents(prev => prev.map(ev => ({
+      ...ev,
+      status: 'NOT_SEEDED',
+      heats: [],
+    })));
+    if (clearClubsToo) {
+      setClubs([]);
+    }
   };
 
   const importBulkAthletes = (newRows: {
@@ -754,6 +767,7 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         addAthlete,
         updateAthlete,
         deleteAthlete,
+        deleteAllAthletes,
         importBulkAthletes,
         addEvent,
         updateEvent,

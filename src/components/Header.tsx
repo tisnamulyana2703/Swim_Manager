@@ -5,14 +5,12 @@
 
 import React, { useState } from 'react';
 import { useSwimData, ActiveTab } from '../context/SwimDataContext';
-import { AppUserRole } from '../types/swim';
 import { 
   Printer, 
-  UserCheck, 
   RotateCcw, 
   Download, 
   Upload, 
-  ChevronDown,
+  ChevronDown, 
   Settings 
 } from 'lucide-react';
 
@@ -20,8 +18,6 @@ export const Header: React.FC = () => {
   const { 
     activeTab, 
     setActiveTab, 
-    userRole, 
-    setUserRole, 
     openPrintModal,
     championship,
     resetToDefaultData,
@@ -29,15 +25,7 @@ export const Header: React.FC = () => {
     importDatabaseJSON
   } = useSwimData();
 
-  const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [showToolsMenu, setShowToolsMenu] = useState(false);
-
-  const roleLabels: Record<AppUserRole, string> = {
-    TECHNICAL_DELEGATE: 'Technical Delegate (TD)',
-    TIMEKEEPER_OPERATOR: 'Operator Pencatat Waktu',
-    CLUB_OFFICIAL: 'Ofisial Klub / Pelatih',
-    PUBLIC_SPECTATOR: 'Publik / Penonton',
-  };
 
   const navItems: { id: ActiveTab; label: string }[] = [
     { id: 'dashboard', label: 'Ringkasan' },
@@ -116,58 +104,13 @@ export const Header: React.FC = () => {
             })}
           </nav>
 
-          {/* Zone 3: Actions & Role Selector */}
+          {/* Zone 3: Actions */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Quick Role Switcher */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowRoleMenu(!showRoleMenu);
-                  setShowToolsMenu(false);
-                }}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors"
-                title="Ganti Peran Pengguna"
-              >
-                <UserCheck className="w-3.5 h-3.5 text-slate-500" />
-                <span className="hidden sm:inline whitespace-nowrap truncate max-w-[130px]">
-                  {roleLabels[userRole].split(' ')[0]}
-                </span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
-              </button>
-
-              {showRoleMenu && (
-                <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-lg shadow-lg py-1.5 z-50 text-xs">
-                  <div className="px-3 py-1 font-semibold text-slate-400 border-b border-slate-100 text-[10px] uppercase">
-                    Pilih Peran Pengguna
-                  </div>
-                  {(Object.keys(roleLabels) as AppUserRole[]).map(r => (
-                    <button
-                      key={r}
-                      onClick={() => {
-                        setUserRole(r);
-                        setShowRoleMenu(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center justify-between ${
-                        userRole === r ? 'font-semibold text-sky-600 bg-sky-50/50' : 'text-slate-700'
-                      }`}
-                    >
-                      <span>{roleLabels[r]}</span>
-                      {userRole === r && <span className="text-sky-600 text-xs font-bold">✓</span>}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
             {/* Tools Dropdown (Backup, Restore, Reset) */}
             <div className="relative">
               <button
                 type="button"
-                onClick={() => {
-                  setShowToolsMenu(!showToolsMenu);
-                  setShowRoleMenu(false);
-                }}
+                onClick={() => setShowToolsMenu(!showToolsMenu)}
                 className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors"
                 title="Alat & Cadangan Data"
               >
