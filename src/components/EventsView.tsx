@@ -19,7 +19,8 @@ import {
   Edit3,
   Check,
   RotateCcw,
-  Layers
+  Layers,
+  Copy
 } from 'lucide-react';
 
 export const EventsView: React.FC = () => {
@@ -43,6 +44,8 @@ export const EventsView: React.FC = () => {
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [duplicatingFromNumber, setDuplicatingFromNumber] = useState<number | null>(null);
+  const [toastNotification, setToastNotification] = useState<string | null>(null);
 
   const [eventNumber, setEventNumber] = useState<number>(events.length > 0 ? Math.max(...events.map(e => e.eventNumber)) + 1 : 101);
   const [distance, setDistance] = useState<number>(50);
@@ -91,6 +94,7 @@ export const EventsView: React.FC = () => {
 
   const handleOpenAddModal = () => {
     setEditingEventId(null);
+    setDuplicatingFromNumber(null);
     const nextNum = events.length > 0 ? Math.max(...events.map(e => e.eventNumber)) + 1 : 101;
     const defaultKU = customAgeGroups[0]?.code || 'AGE_8';
     const initialKUs = [defaultKU];
@@ -113,6 +117,7 @@ export const EventsView: React.FC = () => {
 
   const handleOpenEditModal = (event: SwimEvent) => {
     setEditingEventId(event.id);
+    setDuplicatingFromNumber(null);
     setEventNumber(event.eventNumber);
     setDistance(event.distance);
     setStroke(event.stroke);
@@ -131,6 +136,54 @@ export const EventsView: React.FC = () => {
     setCustomTitle(event.title);
     setIsAutoTitle(false);
     setShowAddModal(true);
+  };
+
+  const handleOpenDuplicateModal = (sourceEvent: SwimEvent) => {
+    setEditingEventId(null);
+    setDuplicatingFromNumber(sourceEvent.eventNumber);
+
+    const nextNum = events.length > 0 ? Math.max(...events.map(e => e.eventNumber)) + 1 : 101;
+    const eventKUs = getEventAgeGroupCodes(sourceEvent);
+    const validKUs = eventKUs.length > 0 ? eventKUs : ['OPEN'];
+
+    setEventNumber(nextNum);
+    setDistance(sourceEvent.distance);
+    setStroke(sourceEvent.stroke);
+    setGender(sourceEvent.gender);
+    setSelectedAgeGroups(validKUs);
+    setRound(sourceEvent.round);
+    setSession(sourceEvent.session);
+    setRecordTime(sourceEvent.meetRecord?.time || '');
+    setRecordHolder(sourceEvent.meetRecord?.holder || '');
+    setRecordClub(sourceEvent.meetRecord?.club || '');
+    setRecordYear(sourceEvent.meetRecord?.year || 2024);
+    setCustomTitle(sourceEvent.title);
+    setIsAutoTitle(false);
+    setShowAddModal(true);
+  };
+
+  const handleDirectDuplicate = (sourceEvent: SwimEvent) => {
+    const nextNum = events.length > 0 ? Math.max(...events.map(e => e.eventNumber)) + 1 : 101;
+    const eventKUs = getEventAgeGroupCodes(sourceEvent);
+    const primaryAgeGroup = eventKUs[0] || 'OPEN';
+
+    addEvent({
+      eventNumber: nextNum,
+      title: sourceEvent.title,
+      distance: sourceEvent.distance,
+      stroke: sourceEvent.stroke,
+      gender: sourceEvent.gender,
+      ageGroup: eventKUs.length === 1 ? primaryAgeGroup : eventKUs.join(','),
+      ageGroups: eventKUs,
+      round: sourceEvent.round,
+      session: sourceEvent.session,
+      meetRecord: sourceEvent.meetRecord ? { ...sourceEvent.meetRecord } : undefined,
+    });
+
+    setToastNotification(`Nomor lomba #${sourceEvent.eventNumber} berhasil diduplikat menjadi #${nextNum}!`);
+    setTimeout(() => {
+      setToastNotification(null);
+    }, 4000);
   };
 
   const toggleAgeGroup = (code: AgeGroupCode) => {
@@ -256,6 +309,22 @@ export const EventsView: React.FC = () => {
         </div>
       </div>
 
+      {/* Toast Notification */}
+      {toastNotification && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs px-4 py-2.5 rounded-xl flex items-center justify-between shadow-xs animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span className="font-semibold">{toastNotification}</span>
+          </div>
+          <button 
+            onClick={() => setToastNotification(null)}
+            className="text-emerald-600 hover:text-emerald-800 p-0.5 rounded cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Events Grid / Table */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
@@ -354,10 +423,26 @@ export const EventsView: React.FC = () => {
                         {/* Edit Button */}
                         <button
                           onClick={() => handleOpenEditModal(event)}
-                          className="p-1.5 text-slate-500 hover:text-sky-700 hover:bg-sky-50 rounded-md transition-colors"
+                          className="p-1.5 text-slate-500 hover:text-sky-700 hover:bg-sky-50 rounded-md transition-colors cursor-pointer"
                           title="Edit Rincian & Kelompok Usia Nomor Lomba"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+
+                        {/* Duplikat Nomor Lomba Button */}
+                        <button
+                          onClick={(e) => {
+                            if (e.shiftKey) {
+                              handleDirectDuplicate(event);
+                            } else {
+                              handleOpenDuplicateModal(event);
+                            }
+                          }}
+                          className="p-1.5 text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors cursor-pointer flex items-center gap-1 group"
+                          title="Duplikat Nomor Lomba (Klik untuk sesuaikan, Shift+Klik untuk duplikat instan)"
+                        >
+                          <Copy className="w-3.5 h-3.5 text-emerald-600 group-hover:scale-110 transition-transform" />
+                          <span className="sr-only sm:not-sr-only text-[11px] font-semibold text-emerald-700">Duplikat</span>
                         </button>
 
                         {/* Auto-seed this event */}
@@ -416,34 +501,63 @@ export const EventsView: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal Add / Edit Event with Multiple Age Group Selection */}
+      {/* Modal Add / Edit / Duplicate Event with Multiple Age Group Selection */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden my-6 max-h-[92vh] flex flex-col">
             <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-sky-600 text-white flex items-center justify-center shadow-xs">
-                  <Layers className="w-4 h-4" />
+                <div className={`w-8 h-8 rounded-lg ${duplicatingFromNumber ? 'bg-emerald-600' : 'bg-sky-600'} text-white flex items-center justify-center shadow-xs`}>
+                  {duplicatingFromNumber ? <Copy className="w-4 h-4" /> : <Layers className="w-4 h-4" />}
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-900">
-                    {editingEventId ? `Edit Nomor Lomba #${eventNumber}` : 'Tambah Nomor Lomba Baru'}
+                    {editingEventId 
+                      ? `Edit Nomor Lomba #${eventNumber}` 
+                      : duplicatingFromNumber 
+                        ? `Duplikat Nomor Lomba #${eventNumber}` 
+                        : 'Tambah Nomor Lomba Baru'}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Konfigurasi jarak, gaya, gender, babak, dan kombinasi kelompok usia lomba
+                    {duplicatingFromNumber 
+                      ? `Menduplikat rincian dari nomor #${duplicatingFromNumber} menjadi nomor baru #${eventNumber}` 
+                      : 'Konfigurasi jarak, gaya, gender, babak, dan kombinasi kelompok usia lomba'}
                   </p>
                 </div>
               </div>
 
               <button 
                 onClick={() => setShowAddModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSaveEvent} className="p-6 space-y-5 overflow-y-auto">
+              {/* Duplication Quick Helper Banner */}
+              {duplicatingFromNumber !== null && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+                  <div className="flex items-center gap-2 text-emerald-950 font-medium">
+                    <Copy className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>
+                      Salinan dari <strong>Nomor #{duplicatingFromNumber}</strong>. Diberikan nomor baru otomatis <strong>#{eventNumber}</strong>.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const toggledGender: Gender = gender === 'MALE' ? 'FEMALE' : gender === 'FEMALE' ? 'MALE' : 'MIXED';
+                      handleGenderChange(toggledGender);
+                    }}
+                    className="self-start sm:self-auto px-2.5 py-1 bg-white hover:bg-emerald-100 text-emerald-800 font-semibold border border-emerald-300 rounded-lg transition-colors shadow-2xs cursor-pointer text-xs flex items-center gap-1.5"
+                    title="Ubah gender secara instan (Putra ↔ Putri)"
+                  >
+                    <span>🔄 {gender === 'MALE' ? 'Ubah ke Putri' : gender === 'FEMALE' ? 'Ubah ke Putra' : 'Ubah Gender'}</span>
+                  </button>
+                </div>
+              )}
+
               {/* Event Core Config Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
@@ -691,7 +805,13 @@ export const EventsView: React.FC = () => {
                   className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-xs transition-colors cursor-pointer"
                 >
                   <Check className="w-3.5 h-3.5" />
-                  <span>{editingEventId ? 'Simpan Perubahan Nomor Lomba' : 'Tambahkan Nomor Lomba'}</span>
+                  <span>
+                    {editingEventId 
+                      ? 'Simpan Perubahan Nomor Lomba' 
+                      : duplicatingFromNumber 
+                        ? `Simpan Duplikat Sebagai #${eventNumber}` 
+                        : 'Tambahkan Nomor Lomba'}
+                  </span>
                 </button>
               </div>
             </form>
