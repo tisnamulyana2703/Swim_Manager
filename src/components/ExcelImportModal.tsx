@@ -21,9 +21,11 @@ import {
 
 interface ParsedAthleteRow {
   nik: string;
+  regNumber: string;
   name: string;
   gender: 'MALE' | 'FEMALE';
   birthDate: string;
+  customKU?: string;
   clubCode: string;
   clubName: string;
   eventNumbers: number[];
@@ -41,7 +43,15 @@ interface ExcelImportModalProps {
 }
 
 export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({ isOpen, onClose }) => {
-  const { championship, clubs, events, importBulkAthletes } = useSwimData();
+  const { 
+    championship, 
+    clubs, 
+    events, 
+    customAgeGroups, 
+    getAgeGroupLabel, 
+    getStrokeLabel, 
+    importBulkAthletes 
+  } = useSwimData();
 
   const [activeTab, setActiveTab] = useState<'upload' | 'paste'>('upload');
   const [pasteText, setPasteText] = useState('');
@@ -73,16 +83,28 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({ isOpen, onCl
 
     records.forEach((r, idx) => {
       // Find Name
-      const nameKey = findColumnKey(r, ['nama', 'nama lengkap', 'name', 'atlet', 'nama atlet', 'swimmer']);
+      const nameKey = findColumnKey(r, [
+        'nama', 'nama lengkap', 'nama perenang', 'name', 'atlet', 'nama atlet', 'swimmer', 'athlete name'
+      ]);
       const nameVal = nameKey ? String(r[nameKey] || '').trim() : '';
       if (!nameVal) return; // skip empty rows
 
+      // Find Register Number (optional / auto-generated)
+      const regKey = findColumnKey(r, [
+        'no. register', 'no register', 'nomor register', 'register', 'reg number', 'reg no', 'no reg', 'kode register', 'id register', 'no_register'
+      ]);
+      const regVal = regKey && r[regKey] ? String(r[regKey]).trim() : '';
+
       // Find NIK
-      const nikKey = findColumnKey(r, ['nik', 'id', 'no identitas', 'nomor identitas', 'nik/id', 'ktp', 'nisn']);
-      const nikVal = nikKey ? String(r[nikKey] || '').trim() : `317${Date.now()}${idx}`;
+      const nikKey = findColumnKey(r, [
+        'nik', 'id', 'no identitas', 'nomor identitas', 'nik/id', 'ktp', 'nisn', 'no ktp', 'nik atlet'
+      ]);
+      const nikVal = nikKey && r[nikKey] ? String(r[nikKey]).trim() : '';
 
       // Find Gender
-      const genderKey = findColumnKey(r, ['gender', 'jenis kelamin', 'jk', 'sex', 'l/p', 'kategori']);
+      const genderKey = findColumnKey(r, [
+        'gender', 'jenis kelamin', 'jk', 'sex', 'l/p', 'kategori', 'kategori gender'
+      ]);
       const genderRaw = genderKey ? String(r[genderKey] || '').trim().toLowerCase() : '';
       const gender: 'MALE' | 'FEMALE' = 
         genderRaw.startsWith('p') && !genderRaw.startsWith('pu') && genderRaw.length <= 2 
@@ -92,8 +114,10 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({ isOpen, onCl
           : 'MALE';
 
       // Find Birth Date
-      const birthKey = findColumnKey(r, ['tanggal lahir', 'tgl lahir', 'birthdate', 'birth date', 'dob', 'lahir']);
-      let birthDateVal = '2011-01-01';
+      const birthKey = findColumnKey(r, [
+        'tanggal lahir', 'tgl lahir', 'birthdate', 'birth date', 'dob', 'lahir', 'tgl_lahir'
+      ]);
+      let birthDateVal = '2016-01-01';
       if (birthKey && r[birthKey]) {
         const rawDate = r[birthKey];
         if (typeof rawDate === 'number') {
@@ -126,52 +150,81 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({ isOpen, onCl
       const age = calculateAge(birthDateVal, championship.cutoffDate);
       const ageGroup = determineAgeGroup(age);
 
+      // Custom KU column if present
+      const customKUKey = findColumnKey(r, [
+        'kelompok usia', 'kelompok umur', 'ku', 'age group', 'kategori usia', 'kelompok_usia'
+      ]);
+      const customKUVal = customKUKey && r[customKUKey] ? String(r[customKUKey]).trim() : undefined;
+
       // Club
-      const clubCodeKey = findColumnKey(r, ['kode klub', 'kode perkumpulan', 'kode', 'club code']);
-      const clubNameKey = findColumnKey(r, ['nama klub', 'klub', 'club', 'perkumpulan', 'asal klub', 'kontingen']);
+      const clubCodeKey = findColumnKey(r, [
+        'kode klub', 'kode perkumpulan', 'kode', 'club code', 'id klub', 'kode_klub'
+      ]);
+      const clubNameKey = findColumnKey(r, [
+        'nama klub', 'klub', 'club', 'perkumpulan', 'asal klub', 'kontingen', 'nama perkumpulan'
+      ]);
       const clubCode = clubCodeKey ? String(r[clubCodeKey] || '').toUpperCase().trim() : (clubNameKey ? String(r[clubNameKey] || '').slice(0, 8).toUpperCase().trim() : 'IND');
       const clubName = clubNameKey ? String(r[clubNameKey] || '').trim() : clubCode;
 
       const isExisting = existingClubCodes.has(clubCode) || existingClubNames.has(clubName.toLowerCase());
 
       // Events & Seed Time
-      const eventKey = findColumnKey(r, ['nomor lomba', 'nomor acara', 'event', 'events', 'no lomba', 'lomba']);
-      const seedKey = findColumnKey(r, ['seed time', 'seed', 'entry time', 'waktu terbaik', 'best time', 'waktu']);
+      const eventKey = findColumnKey(r, [
+        'nomor lomba', 'nomor acara', 'event', 'events', 'no lomba', 'lomba', 'no acara', 'nomor_lomba'
+      ]);
+      const seedKey = findColumnKey(r, [
+        'seed time', 'seed', 'entry time', 'waktu terbaik', 'best time', 'waktu', 'seed times', 'catatan waktu', 'seed_time'
+      ]);
       
       const eventNumbers: number[] = [];
       const seedTimes: Record<number, string> = {};
 
       if (eventKey && r[eventKey]) {
         const rawEvent = String(r[eventKey]);
-        // Extract numbers like "101, 103" or "101"
         const matches = rawEvent.match(/\d+/g);
         if (matches) {
           matches.forEach(m => {
             const num = parseInt(m, 10);
-            if (!isNaN(num)) eventNumbers.push(num);
+            if (!isNaN(num) && !eventNumbers.includes(num)) {
+              eventNumbers.push(num);
+            }
           });
         }
       }
 
-      const seedVal = seedKey && r[seedKey] ? String(r[seedKey]).trim() : '00:00.00';
+      // Split multiple seed times if multiple events were entered
+      const rawSeed = seedKey && r[seedKey] ? String(r[seedKey]).trim() : '';
+      const parsedSeedList = rawSeed
+        ? rawSeed.split(/[,;\n]+/).map(s => s.trim()).filter(Boolean)
+        : [];
+
       if (eventNumbers.length > 0) {
-        eventNumbers.forEach(evNum => {
-          seedTimes[evNum] = seedVal;
+        eventNumbers.forEach((evNum, evIdx) => {
+          let sTime = parsedSeedList[evIdx] || parsedSeedList[0] || '00:00.00';
+          if (/^\d{1,2}\.\d{2}$/.test(sTime)) {
+            sTime = `00:${sTime.padStart(5, '0')}`;
+          }
+          seedTimes[evNum] = sTime;
         });
       }
 
+      const finalReg = regVal || `REG-${nameVal.slice(0, 3).toUpperCase()}-${Math.floor(100 + Math.random() * 899)}`;
+      const finalNik = nikVal || finalReg;
+
       processed.push({
-        nik: nikVal,
+        nik: finalNik,
+        regNumber: finalReg,
         name: nameVal,
         gender,
         birthDate: birthDateVal,
+        customKU: customKUVal,
         clubCode: clubCode || 'IND',
         clubName: clubName || 'Independen',
         eventNumbers,
         seedTimes,
         calculatedAge: age,
         calculatedKU: ageGroup,
-        isValid: Boolean(nameVal && nikVal),
+        isValid: Boolean(nameVal),
         isExistingClub: isExisting,
       });
     });
@@ -193,17 +246,20 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({ isOpen, onCl
       try {
         const data = new Uint8Array(evt.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
+        const targetSheetName = workbook.SheetNames.find(n => 
+          n.toLowerCase().includes('formulir') || n.toLowerCase().includes('pendaftar') || n.toLowerCase().includes('atlet')
+        ) || workbook.SheetNames[0];
+
+        const worksheet = workbook.Sheets[targetSheetName];
         const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet);
 
         if (json.length === 0) {
-          alert('Berkas Excel kosong atau tidak memiliki baris data.');
+          alert('Berkas Excel kosong atau tidak memiliki baris data pada lembar formulir.');
           return;
         }
 
         processRawRecords(json);
-      } catch (err) {
+      } catch {
         alert('Gagal membaca berkas Excel. Pastikan format berkas valid (.xlsx, .xls, .csv).');
       }
     };
@@ -248,68 +304,159 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({ isOpen, onCl
     }
   };
 
-  // Download Sample Template
+  // Download Sample Template with multiple sheets matching the latest registration form
   const handleDownloadTemplate = () => {
-    const templateData = [
+    const workbook = XLSX.utils.book_new();
+
+    // 1. Sheet: Formulir_Pendaftar (Main Form matching latest registration fields)
+    const sampleRegistrationData = [
       {
-        'NIK': '3171011205110001',
-        'Nama Lengkap': 'Kenzo Alfarizi Pratama',
+        'No. Register': 'REG-ALV-128',
+        'Nama Lengkap': 'Dimas Alvaro Pratama',
         'Jenis Kelamin': 'Putra',
-        'Tanggal Lahir': '2011-05-12',
+        'Tanggal Lahir': '2018-05-12',
+        'Kelompok Usia': 'C',
         'Kode Klub': 'MILL-JKT',
         'Nama Klub': 'Millennium Aquatic Jakarta',
-        'Nomor Lomba': '101, 103',
-        'Seed Time': '00:25.80'
+        'NIK': '3171011205180001',
+        'Nomor Lomba': '100',
+        'Seed Time': '00:18.50'
       },
       {
-        'NIK': '3172021508110002',
+        'No. Register': 'REG-ARK-129',
+        'Nama Lengkap': 'Arkan Naufal Rasyid',
+        'Jenis Kelamin': 'Putra',
+        'Tanggal Lahir': '2018-08-20',
+        'Kelompok Usia': 'C',
+        'Kode Klub': 'PARI',
+        'Nama Klub': 'Pari Sakti Swimming Club',
+        'NIK': '3172021508180002',
+        'Nomor Lomba': '100',
+        'Seed Time': '00:19.20'
+      },
+      {
+        'No. Register': 'REG-NAY-102',
         'Nama Lengkap': 'Nayla Putri Azzahra',
         'Jenis Kelamin': 'Putri',
-        'Tanggal Lahir': '2012-01-14',
+        'Tanggal Lahir': '2017-02-14',
+        'Kelompok Usia': 'D',
         'Kode Klub': 'JAQ',
         'Nama Klub': 'Jakarta Aquatic Club',
-        'Nomor Lomba': '102',
-        'Seed Time': '00:28.65'
+        'NIK': '3172021508170003',
+        'Nomor Lomba': '101',
+        'Seed Time': '00:26.50'
       },
       {
-        'NIK': '3525181102080018',
-        'Nama Lengkap': 'Dimas Wicaksono',
+        'No. Register': '',
+        'Nama Lengkap': 'Kenzo Alfarizi Pratama',
         'Jenis Kelamin': 'Putra',
-        'Tanggal Lahir': '2008-02-11',
+        'Tanggal Lahir': '2016-07-22',
+        'Kelompok Usia': 'E',
         'Kode Klub': 'PETRO',
         'Nama Klub': 'Petrokimia Gresik Aquatic Club',
-        'Nomor Lomba': '103',
-        'Seed Time': '01:06.10'
+        'NIK': '3525181102160018',
+        'Nomor Lomba': '102, 104',
+        'Seed Time': '00:31.40, 01:10.20'
       },
       {
-        'NIK': '3273241208030024',
-        'Nama Lengkap': 'Triady Fauzi Sidiq',
-        'Jenis Kelamin': 'Putra',
-        'Tanggal Lahir': '2003-08-12',
+        'No. Register': '',
+        'Nama Lengkap': 'Siti Rahmawati',
+        'Jenis Kelamin': 'Putri',
+        'Tanggal Lahir': '2014-11-03',
+        'Kelompok Usia': 'G',
         'Kode Klub': 'BEAST',
         'Nama Klub': 'Beast Aquatic Club Bandung',
-        'Nomor Lomba': '105',
-        'Seed Time': '00:24.45'
+        'NIK': '',
+        'Nomor Lomba': '103',
+        'Seed Time': '00:29.80'
       }
     ];
 
-    const worksheet = XLSX.utils.json_to_sheet(templateData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Pendaftaran_Atlet');
-
-    // Auto-fit column widths
-    worksheet['!cols'] = [
+    const wsForm = XLSX.utils.json_to_sheet(sampleRegistrationData);
+    wsForm['!cols'] = [
+      { wch: 16 }, // No. Register
+      { wch: 28 }, // Nama Lengkap
+      { wch: 14 }, // Jenis Kelamin
+      { wch: 15 }, // Tanggal Lahir
+      { wch: 16 }, // Kelompok Usia
+      { wch: 14 }, // Kode Klub
+      { wch: 32 }, // Nama Klub
       { wch: 20 }, // NIK
-      { wch: 28 }, // Nama
-      { wch: 14 }, // JK
-      { wch: 15 }, // Tgl Lahir
-      { wch: 12 }, // Kode Klub
-      { wch: 30 }, // Nama Klub
       { wch: 16 }, // Nomor Lomba
-      { wch: 14 }, // Seed Time
+      { wch: 22 }, // Seed Time
     ];
+    XLSX.utils.book_append_sheet(workbook, wsForm, 'Formulir_Pendaftar');
 
-    XLSX.writeFile(workbook, 'Template_Pendaftaran_Atlet_SwimRace.xlsx');
+    // 2. Sheet: Daftar_Nomor_Lomba (Active Championship Events reference)
+    const eventsData = events.map(e => ({
+      'No. Lomba': e.eventNumber,
+      'Nama Nomor Acara': e.title,
+      'Jarak': `${e.distance}m`,
+      'Gaya Renang': getStrokeLabel(e.stroke),
+      'Jenis Kelamin': e.gender === 'MALE' ? 'Putra' : 'Putri',
+      'Kelompok Usia': getAgeGroupLabel(e.ageGroup),
+      'Sesi Lomba': `Sesi ${e.session}`,
+      'Babak': e.round === 'TIMED_FINAL' ? 'Timed Final' : e.round
+    }));
+
+    const wsEvents = XLSX.utils.json_to_sheet(eventsData);
+    wsEvents['!cols'] = [
+      { wch: 12 },
+      { wch: 38 },
+      { wch: 10 },
+      { wch: 18 },
+      { wch: 14 },
+      { wch: 20 },
+      { wch: 12 },
+      { wch: 14 }
+    ];
+    XLSX.utils.book_append_sheet(workbook, wsEvents, 'Daftar_Nomor_Lomba');
+
+    // 3. Sheet: Panduan_Kelompok_Usia (Current Age Groups A-I guide & Cutoff date)
+    const ageGroupsData = customAgeGroups.map(ag => ({
+      'Kode KU': ag.code,
+      'Nama Kategori': ag.name,
+      'Usia Minimal': ag.minAge,
+      'Usia Maksimal': ag.maxAge >= 90 ? 'Tak Terbatas' : ag.maxAge,
+      'Batas Umur (Tahun)': ag.minAge === ag.maxAge ? `${ag.minAge} Tahun` : `${ag.minAge} s/d ${ag.maxAge} Tahun`,
+      'Tanggal Batas Cutoff': championship.cutoffDate,
+      'Keterangan': ag.description || 'Kategori resmi kejuaraan'
+    }));
+
+    const wsAgeGroups = XLSX.utils.json_to_sheet(ageGroupsData);
+    wsAgeGroups['!cols'] = [
+      { wch: 16 },
+      { wch: 26 },
+      { wch: 14 },
+      { wch: 16 },
+      { wch: 22 },
+      { wch: 22 },
+      { wch: 36 }
+    ];
+    XLSX.utils.book_append_sheet(workbook, wsAgeGroups, 'Panduan_Kelompok_Usia');
+
+    // 4. Sheet: Daftar_Klub (Existing clubs reference)
+    const clubsData = clubs.map(c => ({
+      'Kode Klub': c.code,
+      'Nama Perkumpulan / Klub': c.name,
+      'Kota': c.city || '-',
+      'Provinsi': c.province || '-',
+      'Pelatih': c.coach || '-',
+      'Kontak': c.contactNumber || '-'
+    }));
+
+    const wsClubs = XLSX.utils.json_to_sheet(clubsData);
+    wsClubs['!cols'] = [
+      { wch: 14 },
+      { wch: 34 },
+      { wch: 16 },
+      { wch: 18 },
+      { wch: 20 },
+      { wch: 16 }
+    ];
+    XLSX.utils.book_append_sheet(workbook, wsClubs, 'Daftar_Klub');
+
+    XLSX.writeFile(workbook, `Template_Pendaftaran_Atlet_${championship.name.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`);
   };
 
   const toggleSelectRow = (idx: number) => {
@@ -338,6 +485,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({ isOpen, onCl
 
     const result = importBulkAthletes(rowsToImport.map(r => ({
       nik: r.nik,
+      regNumber: r.regNumber,
       name: r.name,
       gender: r.gender,
       birthDate: r.birthDate,
@@ -347,7 +495,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({ isOpen, onCl
       seedTimes: r.seedTimes,
     })));
 
-    setImportStatusMessage(`Berhasil mengimpor ${result.count} atlet! (${result.newClubsCount} klub baru ditambahkan)`);
+    setImportStatusMessage(`Berhasil mengimpor ${result.count} atlet! (${result.newClubsCount} perkumpulan baru didaftarkan)`);
     setTimeout(() => {
       onClose();
     }, 1200);
@@ -444,9 +592,12 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({ isOpen, onCl
               <div className="text-sm font-bold text-slate-800">
                 Klik atau Seret Berkas Excel (.xlsx, .xls) atau .csv ke sini
               </div>
-              <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-                Kolom yang didukung: NIK, Nama Lengkap, Jenis Kelamin (Putra/Putri), Tanggal Lahir (YYYY-MM-DD), Kode/Nama Klub, Nomor Lomba, Seed Time.
+              <p className="text-xs text-slate-500 mt-1 max-w-lg mx-auto">
+                Format terbaru mencakup: <strong>No. Register</strong>, <strong>Nama Lengkap</strong>, <strong>Jenis Kelamin</strong>, <strong>Tanggal Lahir</strong>, <strong>Kelompok Usia (A s/d I)</strong>, <strong>Kode & Nama Klub</strong>, <strong>NIK</strong>, <strong>Nomor Lomba</strong>, dan <strong>Seed Time</strong>.
               </p>
+              <div className="mt-2 text-[11px] text-emerald-700 bg-emerald-100/70 py-1 px-3 rounded-full inline-block">
+                Template kini dilengkapi 4 Sheet: Formulir, Daftar Nomor Lomba, Panduan Kelompok Usia (A-I), dan Daftar Klub
+              </div>
               {fileName && (
                 <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-emerald-300 rounded-full text-xs font-mono text-emerald-800 font-bold">
                   <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
@@ -466,7 +617,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({ isOpen, onCl
                 rows={5}
                 value={pasteText}
                 onChange={e => setPasteText(e.target.value)}
-                placeholder={"NIK\tNama Lengkap\tJenis Kelamin\tTanggal Lahir\tKode Klub\tNama Klub\tNomor Lomba\tSeed Time\n3171011205110001\tKenzo Alfarizi Pratama\tPutra\t2011-05-12\tMILL-JKT\tMillennium Aquatic\t101\t00:25.80"}
+                placeholder={"No. Register\tNama Lengkap\tJenis Kelamin\tTanggal Lahir\tKelompok Usia\tKode Klub\tNama Klub\tNIK\tNomor Lomba\tSeed Time\nREG-ALV-128\tDimas Alvaro Pratama\tPutra\t2018-05-12\tC\tMILL-JKT\tMillennium Aquatic Jakarta\t3171011205180001\t100\t00:18.50"}
                 className="w-full p-3 text-xs font-mono border border-slate-300 rounded-xl focus:outline-hidden focus:border-emerald-500"
               />
               <div className="flex justify-end">
@@ -508,18 +659,21 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({ isOpen, onCl
                   <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-[11px] sticky top-0">
                     <tr>
                       <th className="py-2 px-3 w-8 text-center">✓</th>
+                      <th className="py-2 px-3">No. Register</th>
                       <th className="py-2 px-3">Nama Lengkap & NIK</th>
                       <th className="py-2 px-3">Gender</th>
                       <th className="py-2 px-3">Tgl Lahir / Usia</th>
-                      <th className="py-2 px-3 font-semibold">Kelompok Umur (KU)</th>
+                      <th className="py-2 px-3 font-semibold">Kelompok Usia (KU)</th>
                       <th className="py-2 px-3">Klub / Kontingen</th>
-                      <th className="py-2 px-3">Nomor Lomba</th>
+                      <th className="py-2 px-3">Nomor Lomba & Seed</th>
                       <th className="py-2 px-3 text-center">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {parsedRows.map((row, idx) => {
                       const isSelected = selectedIndices.has(idx);
+                      const displayKU = row.customKU || getAgeGroupLabel(row.calculatedKU, row.calculatedAge);
+
                       return (
                         <tr 
                           key={idx} 
@@ -537,8 +691,15 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({ isOpen, onCl
                             />
                           </td>
                           <td className="py-2.5 px-3">
+                            <span className="font-mono font-bold text-sky-800 bg-sky-50 px-2 py-0.5 rounded border border-sky-200 text-[11px]">
+                              {row.regNumber}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3">
                             <div className="font-bold text-slate-900">{row.name}</div>
-                            <div className="font-mono text-[11px] text-slate-400">{row.nik}</div>
+                            <div className="font-mono text-[11px] text-slate-400">
+                              {row.nik && row.nik !== row.regNumber ? `NIK: ${row.nik}` : '-'}
+                            </div>
                           </td>
                           <td className="py-2.5 px-3">
                             <span className={row.gender === 'MALE' ? 'text-sky-700 font-semibold' : 'text-pink-700 font-semibold'}>
@@ -549,7 +710,9 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({ isOpen, onCl
                             {row.birthDate} ({row.calculatedAge} th)
                           </td>
                           <td className="py-2.5 px-3 font-bold text-slate-800">
-                            {row.calculatedKU.replace('_', ' ')}
+                            <span className="inline-block bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-[11px] border border-slate-200">
+                              {displayKU}
+                            </span>
                           </td>
                           <td className="py-2.5 px-3">
                             <span className="font-bold text-slate-800">{row.clubCode}</span>
@@ -568,7 +731,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({ isOpen, onCl
                                   const seed = row.seedTimes[evNum];
                                   return (
                                     <div key={evNum} className="text-[10px] text-slate-700 font-mono">
-                                      #{evNum} {evMatch ? evMatch.title.split(' ')[0] : ''} ({seed || 'NT'})
+                                      #{evNum} {evMatch ? evMatch.title.split(' ')[0] : ''} <span className="font-bold text-slate-900">({seed || 'NT'})</span>
                                     </div>
                                   );
                                 })}
