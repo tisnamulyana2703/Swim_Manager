@@ -34,7 +34,8 @@ export const AthletesView: React.FC = () => {
     deleteAllAthletes,
     addClub,
     deleteClub,
-    customAgeGroups
+    customAgeGroups,
+    getEventAgeGroupsLabel
   } = useSwimData();
 
   const [activeSubTab, setActiveSubTab] = useState<'athletes' | 'clubs'>('athletes');
@@ -612,9 +613,14 @@ export const AthletesView: React.FC = () => {
                             onChange={() => toggleEventRegistration(ev.id)}
                             className="rounded-sm border-slate-300 text-sky-600 focus:ring-sky-500"
                           />
-                          <div className="truncate">
-                            <span className="font-semibold text-slate-800 text-xs">#{ev.eventNumber}:</span>{' '}
-                            <span className="text-xs text-slate-700">{ev.title}</span>
+                          <div className="truncate flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-semibold text-slate-800 text-xs">#{ev.eventNumber}:</span>{' '}
+                              <span className="text-xs text-slate-700">{ev.title}</span>
+                              <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-semibold border border-slate-200">
+                                {getEventAgeGroupsLabel(ev)}
+                              </span>
+                            </div>
                           </div>
                         </label>
 

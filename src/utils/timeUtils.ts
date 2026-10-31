@@ -33,6 +33,15 @@ export const AGE_GROUPS: AgeGroupConfig[] = [
  * Format label kelompok usia
  */
 export function formatAgeGroupLabel(code: string, age?: number): string {
+  if (!code) return '-';
+  if (code.includes(',')) {
+    return code
+      .split(',')
+      .map(c => formatAgeGroupLabel(c.trim()))
+      .filter(Boolean)
+      .join(', ');
+  }
+
   switch (code) {
     case 'AGE_6_UNDER': return 'Usia ≤6 Thn';
     case 'AGE_7': return 'Usia 7 Thn';
@@ -58,6 +67,19 @@ export function formatAgeGroupLabel(code: string, age?: number): string {
       if (age !== undefined && age > 0) return `Usia ${age} Thn`;
       return code ? code.replace(/_/g, ' ') : '-';
   }
+}
+
+/**
+ * Get all age group codes assigned to an event
+ */
+export function getEventAgeGroupCodes(event: { ageGroup?: string; ageGroups?: string[] }): string[] {
+  if (event.ageGroups && event.ageGroups.length > 0) {
+    return event.ageGroups;
+  }
+  if (event.ageGroup) {
+    return event.ageGroup.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return [];
 }
 
 /**

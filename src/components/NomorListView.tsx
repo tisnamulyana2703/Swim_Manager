@@ -39,7 +39,8 @@ export const NomorListView: React.FC = () => {
     customStrokes,
     customAgeGroups,
     getStrokeLabel,
-    getAgeGroupLabel
+    getAgeGroupLabel,
+    getEventAgeGroupsLabel
   } = useSwimData();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -192,8 +193,13 @@ export const NomorListView: React.FC = () => {
       }
 
       // Age Group
-      if (selectedAgeFilter !== 'ALL' && ev.ageGroup !== selectedAgeFilter) {
-        return false;
+      if (selectedAgeFilter !== 'ALL') {
+        const evAgeCodes = (ev.ageGroups && ev.ageGroups.length > 0)
+          ? ev.ageGroups
+          : (ev.ageGroup ? ev.ageGroup.split(',').map(s => s.trim()) : []);
+        if (!evAgeCodes.includes(selectedAgeFilter)) {
+          return false;
+        }
       }
 
       // Search term: matches event title, number, or any registered participant's name/club/reg
@@ -555,7 +561,7 @@ export const NomorListView: React.FC = () => {
                           {ev.gender === 'MALE' ? 'Putra' : ev.gender === 'FEMALE' ? 'Putri' : 'Campuran'}
                         </span>
                         <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
-                          {formatAgeGroupLabel(ev.ageGroup)}
+                          {getEventAgeGroupsLabel(ev)}
                         </span>
                       </div>
 

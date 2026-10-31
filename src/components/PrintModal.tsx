@@ -24,7 +24,8 @@ export const PrintModal: React.FC = () => {
     recordBreakers, 
     officialMinutes, 
     clubMedalTally, 
-    bestSwimmers 
+    bestSwimmers,
+    getEventAgeGroupsLabel
   } = useSwimData();
 
   const [selectedClubId, setSelectedClubId] = useState<string>('ALL');
@@ -1144,7 +1145,7 @@ export const PrintModal: React.FC = () => {
                           {ev.title}
                         </span>
                         <span className="text-[11px] font-semibold text-black">
-                          ({ev.gender === 'MALE' ? 'Putra' : ev.gender === 'FEMALE' ? 'Putri' : 'Campuran'} · {formatAgeGroupLabel(ev.ageGroup)})
+                          ({ev.gender === 'MALE' ? 'Putra' : ev.gender === 'FEMALE' ? 'Putri' : 'Campuran'} · {getEventAgeGroupsLabel(ev)})
                         </span>
                       </div>
                       <div className="text-[11px] font-mono text-black font-semibold">
@@ -1270,7 +1271,7 @@ export const PrintModal: React.FC = () => {
                         {ev.title}
                       </span>
                       <span className="text-[11px] font-semibold text-black">
-                        ({ev.gender === 'MALE' ? 'Putra' : ev.gender === 'FEMALE' ? 'Putri' : 'Campuran'} · {formatAgeGroupLabel(ev.ageGroup)})
+                        ({ev.gender === 'MALE' ? 'Putra' : ev.gender === 'FEMALE' ? 'Putri' : 'Campuran'} · {getEventAgeGroupsLabel(ev)})
                       </span>
                     </div>
                     <div className="text-[11px] font-mono text-black font-semibold">
@@ -1392,7 +1393,7 @@ export const PrintModal: React.FC = () => {
                       {targetEvent.title}
                     </span>
                     <span className="text-[11px] font-semibold text-black">
-                      ({targetEvent.gender === 'MALE' ? 'Putra' : targetEvent.gender === 'FEMALE' ? 'Putri' : 'Campuran'} · {formatAgeGroupLabel(targetEvent.ageGroup)})
+                      ({targetEvent.gender === 'MALE' ? 'Putra' : targetEvent.gender === 'FEMALE' ? 'Putri' : 'Campuran'} · {getEventAgeGroupsLabel(targetEvent)})
                     </span>
                   </div>
                   <div className="text-[11px] font-mono text-black font-semibold">

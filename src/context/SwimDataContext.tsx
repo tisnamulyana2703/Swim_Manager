@@ -35,7 +35,7 @@ import {
 } from '../data/sampleData';
 import { autoSeedEvent, manualLaneReassign } from '../utils/seeding';
 import { calculateBestSwimmers, calculateClubMedalTally, calculateEventResults } from '../utils/scoring';
-import { calculateAge, determineAgeGroup, generateRegisterNumber, parseTimeToMs } from '../utils/timeUtils';
+import { calculateAge, determineAgeGroup, generateRegisterNumber, parseTimeToMs, formatAgeGroupLabel, getEventAgeGroupCodes } from '../utils/timeUtils';
 
 const STORAGE_KEY = 'swimrace_manager_state_v1';
 
@@ -163,6 +163,7 @@ interface SwimDataContextType {
   resetDefaultAgeGroups: (preset?: 'A_I' | 'PRSI_KU' | 'PER_AGE') => void;
   getStrokeLabel: (code: string) => string;
   getAgeGroupLabel: (code: string, age?: number) => string;
+  getEventAgeGroupsLabel: (event: { ageGroup?: string; ageGroups?: string[] }) => string;
 
   // Data persistence
   resetToDefaultData: () => void;
@@ -334,10 +335,34 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const getAgeGroupLabel = (code: string, age?: number): string => {
+    if (!code) return '-';
+    if (code.includes(',')) {
+      return code
+        .split(',')
+        .map(c => getAgeGroupLabel(c.trim()))
+        .filter(Boolean)
+        .join(', ');
+    }
     const ag = customAgeGroups.find(a => a.code === code);
     if (ag) return ag.name;
     if (age !== undefined && age > 0) return `Usia ${age} Thn`;
-    return code || '-';
+    return formatAgeGroupLabel(code, age);
+  };
+
+  const getEventAgeGroupsLabel = (event: { ageGroup?: string; ageGroups?: string[] }): string => {
+    const codes = getEventAgeGroupCodes(event);
+    if (codes.length === 0) return '-';
+    if (codes.length === 1) return getAgeGroupLabel(codes[0]);
+
+    const activeCustom = customAgeGroups.filter(a => a.isActive);
+    if (activeCustom.length > 0 && activeCustom.every(a => codes.includes(a.code))) {
+      return 'Semua Kelompok Usia (Terbuka)';
+    }
+
+    return codes.map(c => {
+      const match = customAgeGroups.find(a => a.code === c);
+      return match ? (match.label || match.name) : formatAgeGroupLabel(c);
+    }).join(', ');
   };
 
   const openPrintModal = (docType: PrintDocumentType, targetEventId?: string, targetClubId?: string) => {
@@ -911,6 +936,7 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         resetDefaultAgeGroups,
         getStrokeLabel,
         getAgeGroupLabel,
+        getEventAgeGroupsLabel,
         resetToDefaultData,
         exportDatabaseJSON,
         importDatabaseJSON,

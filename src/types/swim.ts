@@ -136,7 +136,8 @@ export interface SwimEvent {
   distance: number; // 50, 100, 200, 400, 800, 1500
   stroke: Stroke;
   gender: Gender;
-  ageGroup: AgeGroupCode;
+  ageGroup: AgeGroupCode; // Primary or legacy code / comma-separated codes
+  ageGroups?: AgeGroupCode[]; // List of selected age groups (e.g. ['AGE_6_UNDER', 'AGE_7'])
   round: EventRound;
   session: number; // Sesi 1 (Pagi), Sesi 2 (Sore), dst.
   status: EventStatus;

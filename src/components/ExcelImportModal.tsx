@@ -49,6 +49,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({ isOpen, onCl
     events, 
     customAgeGroups, 
     getAgeGroupLabel, 
+    getEventAgeGroupsLabel,
     getStrokeLabel, 
     importBulkAthletes 
   } = useSwimData();
@@ -394,7 +395,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({ isOpen, onCl
       'Jarak': `${e.distance}m`,
       'Gaya Renang': getStrokeLabel(e.stroke),
       'Jenis Kelamin': e.gender === 'MALE' ? 'Putra' : 'Putri',
-      'Kelompok Usia': getAgeGroupLabel(e.ageGroup),
+      'Kelompok Usia': getEventAgeGroupsLabel(e),
       'Sesi Lomba': `Sesi ${e.session}`,
       'Babak': e.round === 'TIMED_FINAL' ? 'Timed Final' : e.round
     }));
