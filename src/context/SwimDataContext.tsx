@@ -79,6 +79,7 @@ export type PrintDocumentType =
   | 'nomor_list'
   | 'start_list' 
   | 'start_list_all'
+  | 'buku_acara'
   | 'result_sheet' 
   | 'medal_tally' 
   | 'best_swimmer' 

@@ -14,7 +14,8 @@ import {
   Settings,
   Cloud,
   RefreshCw,
-  LogOut
+  LogOut,
+  BookOpen
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -97,17 +98,18 @@ export const Header: React.FC = () => {
           <nav className="hidden lg:flex items-center gap-0.5 overflow-x-auto py-1 scrollbar-none">
             {navItems.map(item => {
               const isActive = activeTab === item.id;
+              const isBuku = item.id === 'buku_acara';
               return (
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`px-2.5 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap shrink-0 transition-colors ${
+                  className={`px-2.5 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
                     isActive
-                      ? 'text-sky-700 bg-sky-50 font-bold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      ? (isBuku ? 'text-slate-950 bg-amber-400 font-extrabold shadow-2xs' : 'text-sky-700 bg-sky-50 font-bold')
+                      : (isBuku ? 'text-amber-900 bg-amber-50 border border-amber-200 hover:bg-amber-100 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100')
                   }`}
                 >
-                  {item.label}
+                  {isBuku ? '📖 Buku Acara' : item.label}
                 </button>
               );
             })}
@@ -219,13 +221,28 @@ export const Header: React.FC = () => {
               <Settings className="w-4 h-4" />
             </button>
 
-            {/* Zone 3 Primary Action: Cetak Dokumen Resmi */}
+            {/* Quick Button: Buku Acara */}
             <button
-              onClick={() => openPrintModal('official_minutes')}
-              className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-colors whitespace-nowrap shrink-0 shadow-xs"
+              onClick={() => setActiveTab('buku_acara')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap shrink-0 shadow-xs cursor-pointer ${
+                activeTab === 'buku_acara'
+                  ? 'bg-amber-500 text-slate-950 font-black'
+                  : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300'
+              }`}
+              title="Buka Buku Acara Resmi Perlombaan"
             >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Cetak Berkas Lomba</span>
+              <BookOpen className="w-3.5 h-3.5 text-amber-800" />
+              <span>Buku Acara</span>
+            </button>
+
+            {/* Zone 3 Primary Action: Cetak Buku Acara */}
+            <button
+              onClick={() => openPrintModal('buku_acara')}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-colors whitespace-nowrap shrink-0 shadow-xs cursor-pointer"
+              title="Cetak Buku Acara Lomba & Jadwal Seri"
+            >
+              <Printer className="w-3.5 h-3.5 text-amber-300" />
+              <span>Cetak Buku Acara</span>
             </button>
           </div>
 
@@ -235,17 +252,18 @@ export const Header: React.FC = () => {
         <div className="lg:hidden flex items-center gap-1 overflow-x-auto py-2 border-t border-slate-100 scrollbar-none">
           {navItems.map(item => {
             const isActive = activeTab === item.id;
+            const isBuku = item.id === 'buku_acara';
             return (
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
                 className={`px-2.5 py-1 text-xs font-medium rounded-md whitespace-nowrap shrink-0 ${
                   isActive
-                    ? 'text-sky-700 bg-sky-50 font-semibold'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? (isBuku ? 'text-slate-950 bg-amber-400 font-bold' : 'text-sky-700 bg-sky-50 font-semibold')
+                    : (isBuku ? 'text-amber-800 bg-amber-50 font-bold border border-amber-200' : 'text-slate-600 hover:text-slate-900')
                 }`}
               >
-                {item.label}
+                {isBuku ? '📖 Buku Acara' : item.label}
               </button>
             );
           })}

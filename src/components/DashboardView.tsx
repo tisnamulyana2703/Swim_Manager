@@ -17,7 +17,8 @@ import {
   AlertCircle,
   Sparkles,
   Sliders,
-  Settings
+  Settings,
+  BookOpen
 } from 'lucide-react';
 import { STROKE_LABELS } from '../utils/timeUtils';
 
@@ -69,6 +70,14 @@ export const DashboardView: React.FC = () => {
           </p>
 
           <div className="pt-2 flex flex-wrap gap-3">
+            <button
+              onClick={() => setActiveTab('buku_acara')}
+              className="flex items-center gap-2 px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-extrabold rounded-lg shadow-sm transition-colors cursor-pointer"
+            >
+              <BookOpen className="w-4 h-4 text-slate-950" />
+              <span>Buka Buku Acara Lomba</span>
+            </button>
+
             <button
               onClick={() => {
                 runAutoSeedingForAllEvents();

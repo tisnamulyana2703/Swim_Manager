@@ -35,10 +35,28 @@ export const PrintModal: React.FC = () => {
   const [contactPhone, setContactPhone] = useState<string>('0857-9411-2141');
   const [showEditContact, setShowEditContact] = useState<boolean>(false);
   const [pageOrientation, setPageOrientation] = useState<'landscape' | 'portrait'>('landscape');
+  const [bukuAcaraSession, setBukuAcaraSession] = useState<string>('ALL');
 
   const clubMap = useMemo(() => new Map(clubs.map(c => [c.id, c])), [clubs]);
   const eventMap = useMemo(() => new Map(events.map(e => [e.id, e])), [events]);
   const athleteMap = useMemo(() => new Map(athletes.map(a => [a.id, a])), [athletes]);
+
+  // Available sessions in championship
+  const allSessions = useMemo(() => {
+    const s = new Set<number>();
+    events.forEach(e => s.add(e.session || 1));
+    return Array.from(s).sort((a, b) => a - b);
+  }, [events]);
+
+  // Events filtered for Buku Acara / Meet Program
+  const bukuAcaraEvents = useMemo(() => {
+    return events.filter(e => {
+      if (bukuAcaraSession !== 'ALL' && e.session !== parseInt(bukuAcaraSession, 10)) {
+        return false;
+      }
+      return true;
+    }).sort((a, b) => a.eventNumber - b.eventNumber);
+  }, [events, bukuAcaraSession]);
 
   // Statistics of athletes and registered event entries for every club
   const clubEntryStats = useMemo(() => {
@@ -140,7 +158,7 @@ export const PrintModal: React.FC = () => {
 
   // Synchronize club/event selection and page orientation on open
   useEffect(() => {
-    if (activePrintDoc === 'entry_list' || activePrintDoc === 'nomor_list' || activePrintDoc === 'start_list' || activePrintDoc === 'start_list_all') {
+    if (activePrintDoc === 'entry_list' || activePrintDoc === 'nomor_list' || activePrintDoc === 'start_list' || activePrintDoc === 'start_list_all' || activePrintDoc === 'buku_acara') {
       setPageOrientation('landscape');
       if (activePrintDoc === 'nomor_list') {
         if (printTargetEventId) {
@@ -548,7 +566,7 @@ export const PrintModal: React.FC = () => {
 
       {/* Container - wider for entry list, nomor list, and start list table preview */}
       <div className={`bg-white rounded-2xl w-full shadow-2xl border border-slate-300 overflow-hidden my-4 max-h-[94vh] flex flex-col print:shadow-none print:border-none print:rounded-none print:my-0 print:mx-0 print:max-h-none print:max-w-none print:w-full print:overflow-visible print:bg-white ${
-        (activePrintDoc === 'entry_list' || activePrintDoc === 'nomor_list' || activePrintDoc === 'start_list' || activePrintDoc === 'start_list_all')
+        (activePrintDoc === 'entry_list' || activePrintDoc === 'nomor_list' || activePrintDoc === 'start_list' || activePrintDoc === 'start_list_all' || activePrintDoc === 'buku_acara')
           ? (pageOrientation === 'landscape' ? 'max-w-[96vw] xl:max-w-[1360px]' : 'max-w-5xl') 
           : 'max-w-4xl'
       }`}>
@@ -558,15 +576,17 @@ export const PrintModal: React.FC = () => {
           <div className="flex items-center gap-2">
             <Printer className="w-4 h-4 text-sky-400" />
             <span className="font-bold text-sm">
-              {activePrintDoc === 'entry_list' 
+              {(activePrintDoc === 'buku_acara' || activePrintDoc === 'start_list_all')
+                ? 'Pratinjau Cetak Buku Acara Perlombaan (Official Meet Program)'
+                : activePrintDoc === 'entry_list' 
                 ? 'Pratinjau Cetak Entry List (Format Resmi PB Akuatik Indonesia)' 
                 : activePrintDoc === 'nomor_list'
                 ? 'Pratinjau Cetak Nomor List (Daftar Peserta per Nomor Lomba)'
-                : (activePrintDoc === 'start_list' || activePrintDoc === 'start_list_all')
+                : activePrintDoc === 'start_list'
                 ? 'Pratinjau Cetak Starting List (Susunan Lintasan Seri)'
                 : 'Pratinjau Cetak Dokumen Resmi (Format Standar A4)'}
             </span>
-            {(activePrintDoc === 'entry_list' || activePrintDoc === 'nomor_list' || activePrintDoc === 'start_list' || activePrintDoc === 'start_list_all') && (
+            {(activePrintDoc === 'entry_list' || activePrintDoc === 'nomor_list' || activePrintDoc === 'start_list' || activePrintDoc === 'start_list_all' || activePrintDoc === 'buku_acara') && (
               <span className="hidden md:inline-flex items-center text-[10.5px] font-semibold bg-sky-950 border border-sky-600/60 text-sky-300 px-2 py-0.5 rounded-full">
                 A4 {pageOrientation === 'landscape' ? 'Lanskap (Pas Lebar Halaman)' : 'Potret'}
               </span>
@@ -714,7 +734,7 @@ export const PrintModal: React.FC = () => {
               </>
             )}
 
-            {(activePrintDoc === 'start_list' || activePrintDoc === 'start_list_all') && (
+            {(activePrintDoc === 'start_list' || activePrintDoc === 'start_list_all' || activePrintDoc === 'buku_acara') && (
               <>
                 {/* Orientation Selector */}
                 <div className="flex items-center bg-slate-800 rounded-lg p-0.5 text-xs border border-slate-700">
@@ -740,7 +760,38 @@ export const PrintModal: React.FC = () => {
                   </button>
                 </div>
 
+                {/* Session filter for Buku Acara */}
+                {(activePrintDoc === 'start_list_all' || activePrintDoc === 'buku_acara') && allSessions.length > 1 && (
+                  <div className="flex items-center gap-1.5 bg-slate-800 rounded-lg px-2.5 py-1 text-xs">
+                    <span className="text-slate-400">Sesi:</span>
+                    <select
+                      value={bukuAcaraSession}
+                      onChange={(e) => setBukuAcaraSession(e.target.value)}
+                      className="bg-slate-700 text-white rounded px-2 py-0.5 text-xs font-semibold focus:outline-hidden"
+                    >
+                      <option value="ALL">Semua Sesi ({events.length} Nomor)</option>
+                      {allSessions.map(s => {
+                        const cnt = events.filter(e => e.session === s).length;
+                        return (
+                          <option key={s} value={s.toString()}>
+                            Sesi {s} ({cnt} Nomor)
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                )}
+
                 <div className="flex items-center bg-slate-800 rounded-lg p-0.5 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => openPrintModal('buku_acara')}
+                    className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
+                      (activePrintDoc === 'buku_acara' || activePrintDoc === 'start_list_all') ? 'bg-sky-500 text-white font-bold' : 'text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    Buku Acara Lengkap
+                  </button>
                   <button
                     type="button"
                     onClick={() => openPrintModal('start_list', printTargetEventId || undefined)}
@@ -749,15 +800,6 @@ export const PrintModal: React.FC = () => {
                     }`}
                   >
                     Nomor Ini Saja
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openPrintModal('start_list_all')}
-                    className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
-                      activePrintDoc === 'start_list_all' ? 'bg-sky-500 text-white font-bold' : 'text-slate-300 hover:text-white'
-                    }`}
-                  >
-                    Semua Nomor Lomba (Buku Acara)
                   </button>
                 </div>
               </>
@@ -777,6 +819,83 @@ export const PrintModal: React.FC = () => {
               <X className="w-5 h-5" />
             </button>
           </div>
+        </div>
+
+        {/* Global Document Switcher Bar (Screen only, for immediate access to any document) */}
+        <div className="bg-slate-800 px-6 py-2 flex items-center gap-1.5 overflow-x-auto text-xs border-b border-slate-700 print:hidden scrollbar-none">
+          <span className="text-slate-400 font-semibold mr-1 shrink-0 text-[11px] uppercase tracking-wider">
+            Ganti Dokumen:
+          </span>
+          <button
+            onClick={() => openPrintModal('buku_acara')}
+            className={`px-2.5 py-1 rounded-md font-semibold shrink-0 transition-colors cursor-pointer ${
+              (activePrintDoc === 'buku_acara' || activePrintDoc === 'start_list_all')
+                ? 'bg-sky-500 text-white shadow-xs'
+                : 'text-slate-300 hover:text-white hover:bg-slate-700'
+            }`}
+          >
+            📖 Buku Acara (Meet Program)
+          </button>
+          <button
+            onClick={() => openPrintModal('nomor_list')}
+            className={`px-2.5 py-1 rounded-md font-semibold shrink-0 transition-colors cursor-pointer ${
+              activePrintDoc === 'nomor_list'
+                ? 'bg-red-600 text-white shadow-xs'
+                : 'text-slate-300 hover:text-white hover:bg-slate-700'
+            }`}
+          >
+            📋 Nomor List
+          </button>
+          <button
+            onClick={() => openPrintModal('entry_list')}
+            className={`px-2.5 py-1 rounded-md font-semibold shrink-0 transition-colors cursor-pointer ${
+              activePrintDoc === 'entry_list'
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'text-slate-300 hover:text-white hover:bg-slate-700'
+            }`}
+          >
+            📝 Entry List
+          </button>
+          <button
+            onClick={() => openPrintModal('start_list')}
+            className={`px-2.5 py-1 rounded-md font-semibold shrink-0 transition-colors cursor-pointer ${
+              activePrintDoc === 'start_list'
+                ? 'bg-sky-600 text-white shadow-xs'
+                : 'text-slate-300 hover:text-white hover:bg-slate-700'
+            }`}
+          >
+            ⏱️ Start List (Per Nomor)
+          </button>
+          <button
+            onClick={() => openPrintModal('result_sheet')}
+            className={`px-2.5 py-1 rounded-md font-semibold shrink-0 transition-colors cursor-pointer ${
+              activePrintDoc === 'result_sheet'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-300 hover:text-white hover:bg-slate-700'
+            }`}
+          >
+            🏁 Hasil Lomba
+          </button>
+          <button
+            onClick={() => openPrintModal('medal_tally')}
+            className={`px-2.5 py-1 rounded-md font-semibold shrink-0 transition-colors cursor-pointer ${
+              activePrintDoc === 'medal_tally'
+                ? 'bg-amber-500 text-white shadow-xs'
+                : 'text-slate-300 hover:text-white hover:bg-slate-700'
+            }`}
+          >
+            🥇 Perolehan Medali
+          </button>
+          <button
+            onClick={() => openPrintModal('official_minutes')}
+            className={`px-2.5 py-1 rounded-md font-semibold shrink-0 transition-colors cursor-pointer ${
+              activePrintDoc === 'official_minutes'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-300 hover:text-white hover:bg-slate-700'
+            }`}
+          >
+            📜 Berita Acara
+          </button>
         </div>
 
         {/* Collapsible Contact Editor Toolbar (screen-only) */}
@@ -817,8 +936,8 @@ export const PrintModal: React.FC = () => {
         {/* Printable Document Body */}
         <div className="p-6 sm:p-10 overflow-y-auto printable-content font-sans text-slate-900 space-y-6 print:p-0 print:m-0 print:space-y-4 print:overflow-visible print:w-full">
           
-          {/* Official Letterhead (KOP SURAT RESMI) - Hidden for entry_list, nomor_list, and start_list as they have dedicated official headers */}
-          {activePrintDoc !== 'entry_list' && activePrintDoc !== 'nomor_list' && activePrintDoc !== 'start_list' && activePrintDoc !== 'start_list_all' && (
+          {/* Official Letterhead (KOP SURAT RESMI) - Hidden for entry_list, nomor_list, start_list, and buku_acara as they have dedicated official headers */}
+          {activePrintDoc !== 'entry_list' && activePrintDoc !== 'nomor_list' && activePrintDoc !== 'start_list' && activePrintDoc !== 'start_list_all' && activePrintDoc !== 'buku_acara' && (
             <div className="border-b-2 border-slate-900 pb-4 text-center space-y-1">
               <div className="text-xs font-bold tracking-widest uppercase text-slate-700">
                 {championship.organizer}
@@ -1240,7 +1359,7 @@ export const PrintModal: React.FC = () => {
           {/* ========================================================================= */}
           {/* DOCUMENT: START LIST ALL EVENTS (BUKU ACARA LOMBA LENGKAP)                */}
           {/* ========================================================================= */}
-          {activePrintDoc === 'start_list_all' && (
+          {(activePrintDoc === 'start_list_all' || activePrintDoc === 'buku_acara') && (
             <div className="space-y-6 print:space-y-4 font-sans text-black">
               {/* Official Meet Header */}
               <div className="text-center pb-2 border-b-2 border-black">
@@ -1251,15 +1370,16 @@ export const PrintModal: React.FC = () => {
                   {championship.name}
                 </h1>
                 <div className="text-sm sm:text-base font-extrabold uppercase text-red-600 tracking-wider mt-0.5">
-                  BUKU ACARA PERTANDINGAN & SUSUNAN LINTASAN LENGKAP (START LIST)
+                  BUKU ACARA PERTANDINGAN & SUSUNAN LINTASAN LENGKAP (MEET PROGRAM / START LIST)
                 </div>
                 <div className="text-[11px] text-black mt-0.5">
                   {championship.venue} · Kolam {championship.poolLength} ({championship.poolLanes} Lintasan) · {championship.startDate} s/d {championship.endDate}
+                  {bukuAcaraSession !== 'ALL' && ` · Sesi ${bukuAcaraSession}`}
                 </div>
               </div>
 
               {/* Event Listings */}
-              {events.map((ev) => (
+              {bukuAcaraEvents.map((ev) => (
                 <div key={ev.id} className="space-y-1.5 print:break-inside-avoid print:mb-5">
                   {/* Event Banner */}
                   <div className="border border-black bg-slate-50/90 px-3 py-1.5 flex flex-wrap items-center justify-between text-black font-bold text-xs">
@@ -1350,7 +1470,7 @@ export const PrintModal: React.FC = () => {
                 <div>
                   JUMLAH TOTAL:{' '}
                   <span className="font-extrabold text-red-600">
-                    {events.length} NOMOR LOMBA · {events.reduce((acc, ev) => acc + (ev.heats?.length || 0), 0)} SERI TERJADWAL
+                    {bukuAcaraEvents.length} NOMOR LOMBA · {bukuAcaraEvents.reduce((acc, ev) => acc + (ev.heats?.length || 0), 0)} SERI TERJADWAL
                   </span>
                 </div>
                 <div className="text-[11px] text-slate-600">
