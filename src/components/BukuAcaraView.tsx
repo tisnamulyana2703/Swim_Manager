@@ -592,34 +592,6 @@ export const BukuAcaraView: React.FC = () => {
           </div>
         )}
 
-        {/* Official Signatures Footer in Print */}
-        <div className="pt-8 border-t-2 border-slate-900 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center text-xs text-slate-800">
-          <div>
-            <div className="text-[11px] text-slate-500 mb-12">Technical Delegate</div>
-            <div className="font-bold border-t border-slate-300 pt-1">
-              {championship.technicalDelegate || 'Technical Delegate'}
-            </div>
-          </div>
-          <div>
-            <div className="text-[11px] text-slate-500 mb-12">Wasit (Referee)</div>
-            <div className="font-bold border-t border-slate-300 pt-1">
-              {championship.referee || 'Wasit Utama'}
-            </div>
-          </div>
-          <div>
-            <div className="text-[11px] text-slate-500 mb-12">Ketua Juri (Chief Judge)</div>
-            <div className="font-bold border-t border-slate-300 pt-1">
-              {championship.chiefJudge || 'Ketua Juri'}
-            </div>
-          </div>
-          <div>
-            <div className="text-[11px] text-slate-500 mb-12">Ketua Pencatat (Recorder)</div>
-            <div className="font-bold border-t border-slate-300 pt-1">
-              {championship.chiefRecorder || 'Ketua Pencatat'}
-            </div>
-          </div>
-        </div>
-
       </div>
     </div>
   );
