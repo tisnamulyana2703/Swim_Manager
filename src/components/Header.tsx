@@ -11,7 +11,10 @@ import {
   Download, 
   Upload, 
   ChevronDown, 
-  Settings 
+  Settings,
+  Cloud,
+  RefreshCw,
+  LogOut
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -22,7 +25,13 @@ export const Header: React.FC = () => {
     championship,
     resetToDefaultData,
     exportDatabaseJSON,
-    importDatabaseJSON
+    importDatabaseJSON,
+    currentUser,
+    isCloudConnected,
+    isSyncing,
+    loginWithGoogle,
+    logoutGoogle,
+    syncAllToCloud,
   } = useSwimData();
 
   const [showToolsMenu, setShowToolsMenu] = useState(false);
@@ -106,12 +115,58 @@ export const Header: React.FC = () => {
 
           {/* Zone 3: Actions */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* Cloud Realtime Status & Controls */}
+            {currentUser ? (
+              <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-lg text-xs">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span className="font-semibold hidden sm:inline">Realtime Online</span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const ok = await syncAllToCloud();
+                    if (ok) alert('Seluruh data berhasil disinkronkan ke Cloud Firebase!');
+                  }}
+                  disabled={isSyncing}
+                  className="p-1 hover:bg-emerald-100 rounded text-emerald-700 transition-colors cursor-pointer"
+                  title="Upload / Sinkronkan data ke Cloud"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm(`Keluar dari sesi cloud (${currentUser.email || 'Google User'})?`)) {
+                      logoutGoogle();
+                    }
+                  }}
+                  className="p-1 hover:bg-emerald-100 rounded text-emerald-700 transition-colors cursor-pointer"
+                  title={`Keluar (${currentUser.email || 'Google User'})`}
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={loginWithGoogle}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg transition-colors cursor-pointer"
+                title="Hubungkan ke Firebase Cloud agar data tersinkronisasi realtime antar perangkat panitia"
+              >
+                <Cloud className="w-3.5 h-3.5 text-sky-600" />
+                <span className="hidden sm:inline">Hubungkan Realtime</span>
+                <span className="sm:hidden">Realtime</span>
+              </button>
+            )}
+
             {/* Tools Dropdown (Backup, Restore, Reset) */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowToolsMenu(!showToolsMenu)}
-                className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors"
+                className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
                 title="Alat & Cadangan Data"
               >
                 <ChevronDown className="w-4 h-4" />
@@ -127,7 +182,7 @@ export const Header: React.FC = () => {
                       exportDatabaseJSON();
                       setShowToolsMenu(false);
                     }}
-                    className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                    className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center gap-2 text-slate-700 cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5 text-slate-400" />
                     <span>Ekspor Data (JSON)</span>
@@ -144,6 +199,20 @@ export const Header: React.FC = () => {
                     />
                   </label>
 
+                  {currentUser && (
+                    <button
+                      onClick={async () => {
+                        setShowToolsMenu(false);
+                        const ok = await syncAllToCloud();
+                        if (ok) alert('Seluruh data berhasil disinkronkan ke Cloud Firebase!');
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center gap-2 text-sky-700 font-medium cursor-pointer"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 text-sky-600" />
+                      <span>Upload Semua Data ke Cloud</span>
+                    </button>
+                  )}
+
                   <div className="border-t border-slate-100 my-1"></div>
                   <button
                     onClick={() => {
@@ -152,7 +221,7 @@ export const Header: React.FC = () => {
                         setShowToolsMenu(false);
                       }
                     }}
-                    className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2"
+                    className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2 cursor-pointer"
                   >
                     <RotateCcw className="w-3.5 h-3.5 text-red-400" />
                     <span>Reset Data Sampel</span>
@@ -164,7 +233,7 @@ export const Header: React.FC = () => {
             {/* Quick Settings Shortcut */}
             <button
               onClick={() => setActiveTab('settings')}
-              className={`p-1.5 rounded-md transition-colors ${
+              className={`p-1.5 rounded-md transition-colors cursor-pointer ${
                 activeTab === 'settings'
                   ? 'bg-sky-100 text-sky-700 font-bold'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'

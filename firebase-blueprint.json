@@ -1,0 +1,156 @@
+{
+  "entities": {
+    "Championship": {
+      "title": "Championship",
+      "description": "Details of the swimming championship meet",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 150 },
+        "subtitle": { "type": "string", "maxLength": 200 },
+        "venue": { "type": "string", "maxLength": 150 },
+        "poolLength": { "type": "number" },
+        "poolLanes": { "type": "number" },
+        "activeLanes": { "type": "array" },
+        "customLaneOrder": { "type": "array" },
+        "cutoffDate": { "type": "string", "maxLength": 20 },
+        "startDate": { "type": "string", "maxLength": 20 },
+        "endDate": { "type": "string", "maxLength": 20 },
+        "timingSystem": { "type": "string", "maxLength": 50 },
+        "technicalDelegate": { "type": "string", "maxLength": 100 },
+        "referee": { "type": "string", "maxLength": 100 },
+        "starter": { "type": "string", "maxLength": 100 },
+        "chiefFinishJudge": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["title", "poolLength", "poolLanes", "cutoffDate"]
+    },
+    "Club": {
+      "title": "Club",
+      "description": "Registered swimming club or school team",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 100 },
+        "code": { "type": "string", "maxLength": 30 },
+        "name": { "type": "string", "maxLength": 150 },
+        "city": { "type": "string", "maxLength": 100 },
+        "province": { "type": "string", "maxLength": 100 },
+        "coach": { "type": "string", "maxLength": 100 },
+        "contactNumber": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "code", "name"]
+    },
+    "Athlete": {
+      "title": "Athlete",
+      "description": "Swimmer registrant participating in events",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 100 },
+        "regNumber": { "type": "string", "maxLength": 50 },
+        "nik": { "type": "string", "maxLength": 50 },
+        "name": { "type": "string", "maxLength": 150 },
+        "gender": { "type": "string", "enum": ["MALE", "FEMALE"] },
+        "birthDate": { "type": "string", "maxLength": 20 },
+        "clubId": { "type": "string", "maxLength": 100 },
+        "age": { "type": "number" },
+        "ageGroup": { "type": "string", "maxLength": 50 },
+        "registeredEvents": { "type": "array" }
+      },
+      "required": ["id", "name", "gender", "birthDate", "clubId"]
+    },
+    "SwimEvent": {
+      "title": "SwimEvent",
+      "description": "Competition event with heats, lane allocation, and age group configuration",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 100 },
+        "eventNumber": { "type": "number" },
+        "title": { "type": "string", "maxLength": 200 },
+        "distance": { "type": "number" },
+        "stroke": { "type": "string", "maxLength": 50 },
+        "gender": { "type": "string", "enum": ["MALE", "FEMALE", "MIXED"] },
+        "ageGroup": { "type": "string", "maxLength": 100 },
+        "ageGroups": { "type": "array" },
+        "round": { "type": "string", "maxLength": 50 },
+        "session": { "type": "number" },
+        "status": { "type": "string", "enum": ["NOT_SEEDED", "SEEDED", "IN_PROGRESS", "COMPLETED"] },
+        "heats": { "type": "array" },
+        "meetRecord": { "type": "object" }
+      },
+      "required": ["id", "eventNumber", "title", "distance", "stroke", "gender", "round"]
+    },
+    "IncidentReport": {
+      "title": "IncidentReport",
+      "description": "Disqualification (DQ) and official incident logs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 100 },
+        "eventNumber": { "type": "number" },
+        "heatNumber": { "type": "number" },
+        "laneNumber": { "type": "number" },
+        "athleteName": { "type": "string", "maxLength": 150 },
+        "clubName": { "type": "string", "maxLength": 150 },
+        "ruleCode": { "type": "string", "maxLength": 50 },
+        "description": { "type": "string", "maxLength": 500 },
+        "decision": { "type": "string", "maxLength": 50 },
+        "refereeSignature": { "type": "string", "maxLength": 100 },
+        "timestamp": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "eventNumber", "heatNumber", "laneNumber", "ruleCode"]
+    },
+    "OfficialMinutes": {
+      "title": "OfficialMinutes",
+      "description": "Official session minutes signed by the referee",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 100 },
+        "notes": { "type": "string", "maxLength": 2000 },
+        "weatherConditions": { "type": "string", "maxLength": 100 },
+        "waterTemperature": { "type": "number" },
+        "juryRollCall": { "type": "array" },
+        "juryDisqualificationSummary": { "type": "string", "maxLength": 2000 },
+        "signedByReferee": { "type": "string", "maxLength": 100 },
+        "isLocked": { "type": "boolean" }
+      },
+      "required": ["id"]
+    },
+    "Setting": {
+      "title": "Setting",
+      "description": "Custom strokes, age groups, and application configuration",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 100 },
+        "data": { "type": "array" }
+      },
+      "required": ["id"]
+    }
+  },
+  "firestore": {
+    "/championships/{championshipId}": {
+      "schema": "Championship",
+      "description": "Championship meet details and configuration"
+    },
+    "/clubs/{clubId}": {
+      "schema": "Club",
+      "description": "Participating swimming clubs"
+    },
+    "/athletes/{athleteId}": {
+      "schema": "Athlete",
+      "description": "Registered athletes and event entries"
+    },
+    "/events/{eventId}": {
+      "schema": "SwimEvent",
+      "description": "Race events, age groups, heats and seeding"
+    },
+    "/incidents/{incidentId}": {
+      "schema": "IncidentReport",
+      "description": "DQ and incident reports during the meet"
+    },
+    "/officialMinutes/{minutesId}": {
+      "schema": "OfficialMinutes",
+      "description": "Official meet minutes and referee sign-off"
+    },
+    "/settings/{settingId}": {
+      "schema": "Setting",
+      "description": "Meet settings like custom strokes and custom age groups"
+    }
+  }
+}

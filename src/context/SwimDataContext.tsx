@@ -36,6 +36,27 @@ import {
 import { autoSeedEvent, manualLaneReassign } from '../utils/seeding';
 import { calculateBestSwimmers, calculateClubMedalTally, calculateEventResults } from '../utils/scoring';
 import { calculateAge, determineAgeGroup, generateRegisterNumber, parseTimeToMs, formatAgeGroupLabel, getEventAgeGroupCodes } from '../utils/timeUtils';
+import { 
+  collection, 
+  doc, 
+  setDoc, 
+  updateDoc, 
+  deleteDoc, 
+  onSnapshot, 
+  writeBatch,
+  getDocs 
+} from 'firebase/firestore';
+import { 
+  db, 
+  auth, 
+  googleProvider, 
+  signInWithPopup, 
+  signOut, 
+  onAuthStateChanged, 
+  handleFirestoreError, 
+  OperationType,
+  type User 
+} from '../lib/firebase';
 
 const STORAGE_KEY = 'swimrace_manager_state_v1';
 
@@ -169,6 +190,14 @@ interface SwimDataContextType {
   resetToDefaultData: () => void;
   exportDatabaseJSON: () => void;
   importDatabaseJSON: (jsonString: string) => boolean;
+
+  // Cloud & Firebase Realtime
+  currentUser: User | null;
+  isCloudConnected: boolean;
+  isSyncing: boolean;
+  loginWithGoogle: () => Promise<void>;
+  logoutGoogle: () => Promise<void>;
+  syncAllToCloud: () => Promise<boolean>;
 }
 
 const SwimDataContext = createContext<SwimDataContextType | undefined>(undefined);
@@ -181,6 +210,25 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [printTargetEventId, setPrintTargetEventId] = useState<string | null>(null);
   const [printTargetClubId, setPrintTargetClubId] = useState<string | null>(null);
 
+  // Cloud & Firebase Realtime State
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isCloudConnected, setIsCloudConnected] = useState<boolean>(false);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+
+  // Auth State Listener
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setIsCloudConnected(!!user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Helper to sanitize payload for Firestore (strips undefined values)
+  const cleanForFirestore = <T,>(obj: T): T => {
+    return JSON.parse(JSON.stringify(obj));
+  };
+
   // Core Data States
   const [championship, setChampionship] = useState<ChampionshipInfo>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_championship`);
@@ -189,28 +237,30 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const [clubs, setClubs] = useState<Club[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_clubs`);
-    if (!saved) return INITIAL_CLUBS;
-    const list: Club[] = JSON.parse(saved);
-    INITIAL_CLUBS.forEach(ic => {
-      if (!list.some(c => c.id === ic.id)) {
-        list.push(ic);
+    if (saved !== null) {
+      try {
+        return JSON.parse(saved);
+      } catch (err) {
+        console.error('Failed to parse saved clubs:', err);
       }
-    });
-    return list;
+    }
+    return INITIAL_CLUBS;
   });
 
   const [athletes, setAthletes] = useState<Athlete[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_athletes`);
-    const list: Athlete[] = saved ? JSON.parse(saved) : INITIAL_ATHLETES;
-    INITIAL_ATHLETES.forEach(ia => {
-      if (!list.some(a => a.id === ia.id)) {
-        list.push(ia);
+    if (saved !== null) {
+      try {
+        const list: Athlete[] = JSON.parse(saved);
+        return list.map((a, idx) => ({
+          ...a,
+          regNumber: a.regNumber || generateRegisterNumber(a.name, idx + 1),
+        }));
+      } catch (err) {
+        console.error('Failed to parse saved athletes:', err);
       }
-    });
-    return list.map((a, idx) => ({
-      ...a,
-      regNumber: a.regNumber || generateRegisterNumber(a.name, idx + 1),
-    }));
+    }
+    return INITIAL_ATHLETES;
   });
 
   const [events, setEvents] = useState<SwimEvent[]>(() => {
@@ -237,6 +287,93 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const saved = localStorage.getItem(`${STORAGE_KEY}_age_groups`);
     return saved ? JSON.parse(saved) : INITIAL_CUSTOM_AGE_GROUPS;
   });
+
+  // Real-time Firestore synchronization listeners (when user is authenticated)
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // 1. Listen to Championship
+    const unsubChamp = onSnapshot(doc(db, 'championships', 'main'), (snapshot) => {
+      if (snapshot.exists()) {
+        setChampionship(snapshot.data() as ChampionshipInfo);
+      }
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, 'championships/main');
+    });
+
+    // 2. Listen to Clubs
+    const unsubClubs = onSnapshot(collection(db, 'clubs'), (snapshot) => {
+      if (!snapshot.empty) {
+        const cloudClubs: Club[] = [];
+        snapshot.forEach(docSnap => cloudClubs.push(docSnap.data() as Club));
+        setClubs(cloudClubs);
+      }
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, 'clubs');
+    });
+
+    // 3. Listen to Athletes (Live Registrants)
+    const unsubAthletes = onSnapshot(collection(db, 'athletes'), (snapshot) => {
+      const cloudAthletes: Athlete[] = [];
+      snapshot.forEach(docSnap => cloudAthletes.push(docSnap.data() as Athlete));
+      if (snapshot.docs.length > 0 || cloudAthletes.length === 0) {
+        setAthletes(cloudAthletes);
+      }
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, 'athletes');
+    });
+
+    // 4. Listen to Events
+    const unsubEvents = onSnapshot(collection(db, 'events'), (snapshot) => {
+      if (!snapshot.empty) {
+        const cloudEvents: SwimEvent[] = [];
+        snapshot.forEach(docSnap => cloudEvents.push(docSnap.data() as SwimEvent));
+        cloudEvents.sort((a, b) => a.eventNumber - b.eventNumber);
+        setEvents(cloudEvents);
+      }
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, 'events');
+    });
+
+    // 5. Listen to Incidents
+    const unsubIncidents = onSnapshot(collection(db, 'incidents'), (snapshot) => {
+      const cloudIncidents: IncidentReport[] = [];
+      snapshot.forEach(docSnap => cloudIncidents.push(docSnap.data() as IncidentReport));
+      setIncidents(cloudIncidents);
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, 'incidents');
+    });
+
+    // 6. Listen to Official Minutes
+    const unsubMinutes = onSnapshot(doc(db, 'officialMinutes', 'main'), (snapshot) => {
+      if (snapshot.exists()) {
+        setOfficialMinutes(snapshot.data() as OfficialMinutes);
+      }
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, 'officialMinutes/main');
+    });
+
+    // 7. Listen to Settings
+    const unsubSettings = onSnapshot(doc(db, 'settings', 'config'), (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data?.customStrokes) setCustomStrokes(data.customStrokes);
+        if (data?.customAgeGroups) setCustomAgeGroups(data.customAgeGroups);
+      }
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, 'settings/config');
+    });
+
+    return () => {
+      unsubChamp();
+      unsubClubs();
+      unsubAthletes();
+      unsubEvents();
+      unsubIncidents();
+      unsubMinutes();
+      unsubSettings();
+    };
+  }, [currentUser]);
 
   // Persist to local storage
   useEffect(() => {
@@ -380,7 +517,14 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const updateChampionship = (info: Partial<ChampionshipInfo>) => {
-    setChampionship(prev => ({ ...prev, ...info }));
+    setChampionship(prev => {
+      const updated = { ...prev, ...info };
+      if (currentUser) {
+        setDoc(doc(db, 'championships', 'main'), cleanForFirestore(updated))
+          .catch(err => handleFirestoreError(err, OperationType.UPDATE, 'championships/main'));
+      }
+      return updated;
+    });
   };
 
   // Club Operations
@@ -390,10 +534,18 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       id: `club-${Date.now()}`,
     };
     setClubs(prev => [...prev, newClub]);
+    if (currentUser) {
+      setDoc(doc(db, 'clubs', newClub.id), cleanForFirestore(newClub))
+        .catch(err => handleFirestoreError(err, OperationType.CREATE, `clubs/${newClub.id}`));
+    }
   };
 
   const deleteClub = (id: string) => {
     setClubs(prev => prev.filter(c => c.id !== id));
+    if (currentUser) {
+      deleteDoc(doc(db, 'clubs', id))
+        .catch(err => handleFirestoreError(err, OperationType.DELETE, `clubs/${id}`));
+    }
   };
 
   // Athlete Operations
@@ -431,9 +583,14 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     setAthletes(prev => [...prev, newAthlete]);
+    if (currentUser) {
+      setDoc(doc(db, 'athletes', newAthlete.id), cleanForFirestore(newAthlete))
+        .catch(err => handleFirestoreError(err, OperationType.CREATE, `athletes/${newAthlete.id}`));
+    }
   };
 
   const updateAthlete = (id: string, updates: Partial<Athlete>) => {
+    let updatedAthlete: Athlete | null = null;
     setAthletes(prev => prev.map(a => {
       if (a.id !== id) return a;
       const updated = { ...a, ...updates };
@@ -441,15 +598,24 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         updated.age = calculateAge(updates.birthDate, championship.cutoffDate);
         updated.ageGroup = determineAgeGroup(updated.age);
       }
+      updatedAthlete = updated;
       return updated;
     }));
+    if (currentUser && updatedAthlete) {
+      setDoc(doc(db, 'athletes', id), cleanForFirestore(updatedAthlete))
+        .catch(err => handleFirestoreError(err, OperationType.UPDATE, `athletes/${id}`));
+    }
   };
 
   const deleteAthlete = (id: string) => {
     setAthletes(prev => prev.filter(a => a.id !== id));
+    if (currentUser) {
+      deleteDoc(doc(db, 'athletes', id))
+        .catch(err => handleFirestoreError(err, OperationType.DELETE, `athletes/${id}`));
+    }
   };
 
-  const deleteAllAthletes = (clearClubsToo: boolean = false) => {
+  const deleteAllAthletes = async (clearClubsToo: boolean = false) => {
     setAthletes([]);
     setEvents(prev => prev.map(ev => ({
       ...ev,
@@ -458,6 +624,25 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     })));
     if (clearClubsToo) {
       setClubs([]);
+    }
+
+    if (currentUser) {
+      try {
+        const batch = writeBatch(db);
+        const snap = await getDocs(collection(db, 'athletes'));
+        snap.forEach(d => batch.delete(d.ref));
+
+        const evSnap = await getDocs(collection(db, 'events'));
+        evSnap.forEach(d => batch.update(d.ref, { status: 'NOT_SEEDED', heats: [] }));
+
+        if (clearClubsToo) {
+          const clubSnap = await getDocs(collection(db, 'clubs'));
+          clubSnap.forEach(d => batch.delete(d.ref));
+        }
+        await batch.commit();
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, 'athletes');
+      }
     }
   };
 
@@ -596,14 +781,30 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       status: 'NOT_SEEDED',
     };
     setEvents(prev => [...prev, newEvent].sort((a, b) => a.eventNumber - b.eventNumber));
+    if (currentUser) {
+      setDoc(doc(db, 'events', newEvent.id), cleanForFirestore(newEvent))
+        .catch(err => handleFirestoreError(err, OperationType.CREATE, `events/${newEvent.id}`));
+    }
   };
 
   const updateEvent = (id: string, updates: Partial<SwimEvent>) => {
-    setEvents(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
+    setEvents(prev => {
+      const next = prev.map(e => e.id === id ? { ...e, ...updates } : e);
+      const ev = next.find(e => e.id === id);
+      if (currentUser && ev) {
+        setDoc(doc(db, 'events', id), cleanForFirestore(ev))
+          .catch(err => handleFirestoreError(err, OperationType.UPDATE, `events/${id}`));
+      }
+      return next;
+    });
   };
 
   const deleteEvent = (id: string) => {
     setEvents(prev => prev.filter(e => e.id !== id));
+    if (currentUser) {
+      deleteDoc(doc(db, 'events', id))
+        .catch(err => handleFirestoreError(err, OperationType.DELETE, `events/${id}`));
+    }
   };
 
   // Seeding Operations
@@ -633,42 +834,61 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     setEvents(prev => prev.map(e => {
       if (e.id === eventId) {
-        return {
+        const updated = {
           ...e,
           heats,
-          status: heats.length > 0 ? 'SEEDED' : 'NOT_SEEDED',
+          status: heats.length > 0 ? ('SEEDED' as const) : ('NOT_SEEDED' as const),
         };
+        if (currentUser) {
+          setDoc(doc(db, 'events', eventId), cleanForFirestore(updated))
+            .catch(err => handleFirestoreError(err, OperationType.UPDATE, `events/${eventId}`));
+        }
+        return updated;
       }
       return e;
     }));
   };
 
   const runAutoSeedingForAllEvents = () => {
-    setEvents(prev => prev.map(event => {
-      const entries = athletes
-        .filter(a => a.registeredEvents.some(r => r.eventId === event.id))
-        .map(athlete => {
-          const reg = athlete.registeredEvents.find(r => r.eventId === event.id);
-          return {
-            athlete,
-            seedTime: reg?.seedTime || 'NT',
-            seedTimeMs: reg?.seedTimeMs || 0,
-          };
-        });
+    setEvents(prev => {
+      const seeded = prev.map(event => {
+        const entries = athletes
+          .filter(a => a.registeredEvents.some(r => r.eventId === event.id))
+          .map(athlete => {
+            const reg = athlete.registeredEvents.find(r => r.eventId === event.id);
+            return {
+              athlete,
+              seedTime: reg?.seedTime || 'NT',
+              seedTimeMs: reg?.seedTimeMs || 0,
+            };
+          });
 
-      const heats = autoSeedEvent(
-        event, 
-        entries, 
-        championship.poolLanes, 
-        championship.activeLanes, 
-        championship.customLaneOrder
-      );
-      return {
-        ...event,
-        heats,
-        status: heats.length > 0 ? (event.status === 'COMPLETED' ? 'COMPLETED' : 'SEEDED') : 'NOT_SEEDED',
-      };
-    }));
+        const heats = autoSeedEvent(
+          event, 
+          entries, 
+          championship.poolLanes, 
+          championship.activeLanes, 
+          championship.customLaneOrder
+        );
+        return {
+          ...event,
+          heats,
+          status: heats.length > 0 ? (event.status === 'COMPLETED' ? ('COMPLETED' as const) : ('SEEDED' as const)) : ('NOT_SEEDED' as const),
+        };
+      });
+
+      if (currentUser) {
+        try {
+          const batch = writeBatch(db);
+          seeded.forEach(ev => batch.set(doc(db, 'events', ev.id), cleanForFirestore(ev)));
+          batch.commit().catch(err => handleFirestoreError(err, OperationType.WRITE, 'events_all_seeding'));
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      return seeded;
+    });
   };
 
   const reassignLane = (
@@ -681,10 +901,15 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setEvents(prev => prev.map(e => {
       if (e.id === eventId) {
         const updatedHeats = manualLaneReassign(e.heats, fromHeat, fromLane, toHeat, toLane);
-        return {
+        const updated = {
           ...e,
           heats: updatedHeats,
         };
+        if (currentUser) {
+          setDoc(doc(db, 'events', eventId), cleanForFirestore(updated))
+            .catch(err => handleFirestoreError(err, OperationType.UPDATE, `events/${eventId}`));
+        }
+        return updated;
       }
       return e;
     }));
@@ -741,7 +966,14 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               refereeDecision: `Diskualifikasi (DQ) disahkan berdasarkan laporan Juri Lintasan ${res.laneNumber}`,
               signedByRef: true,
             };
-            setIncidents(prevInc => [newInc, ...prevInc]);
+            setIncidents(prevInc => {
+              const next = [newInc, ...prevInc];
+              if (currentUser) {
+                setDoc(doc(db, 'incidents', newInc.id), cleanForFirestore(newInc))
+                  .catch(err => handleFirestoreError(err, OperationType.CREATE, `incidents/${newInc.id}`));
+              }
+              return next;
+            });
           }
         }
       }
@@ -757,11 +989,16 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     setEvents(prev => prev.map(e => {
       if (e.id === eventId) {
-        return {
+        const updated = {
           ...e,
           heats: updatedHeats,
-          status: isCompleted ? 'COMPLETED' : 'IN_PROGRESS',
+          status: isCompleted ? ('COMPLETED' as const) : ('IN_PROGRESS' as const),
         };
+        if (currentUser) {
+          setDoc(doc(db, 'events', eventId), cleanForFirestore(updated))
+            .catch(err => handleFirestoreError(err, OperationType.UPDATE, `events/${eventId}`));
+        }
+        return updated;
       }
       return e;
     }));
@@ -775,14 +1012,82 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
     };
     setIncidents(prev => [newInc, ...prev]);
+    if (currentUser) {
+      setDoc(doc(db, 'incidents', newInc.id), cleanForFirestore(newInc))
+        .catch(err => handleFirestoreError(err, OperationType.CREATE, `incidents/${newInc.id}`));
+    }
   };
 
   const deleteIncident = (id: string) => {
     setIncidents(prev => prev.filter(i => i.id !== id));
+    if (currentUser) {
+      deleteDoc(doc(db, 'incidents', id))
+        .catch(err => handleFirestoreError(err, OperationType.DELETE, `incidents/${id}`));
+    }
   };
 
   const updateOfficialMinutes = (updates: Partial<OfficialMinutes>) => {
-    setOfficialMinutes(prev => ({ ...prev, ...updates }));
+    setOfficialMinutes(prev => {
+      const next = { ...prev, ...updates };
+      if (currentUser) {
+        setDoc(doc(db, 'officialMinutes', 'main'), cleanForFirestore(next))
+          .catch(err => handleFirestoreError(err, OperationType.UPDATE, 'officialMinutes/main'));
+      }
+      return next;
+    });
+  };
+
+  // Cloud Actions
+  const loginWithGoogle = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (err: any) {
+      console.error('Google Sign In Error:', err);
+      alert('Gagal masuk dengan Google: ' + (err?.message || 'Error'));
+    }
+  };
+
+  const logoutGoogle = async () => {
+    try {
+      await signOut(auth);
+    } catch (err: any) {
+      console.error('Google Sign Out Error:', err);
+    }
+  };
+
+  const syncAllToCloud = async (): Promise<boolean> => {
+    if (!currentUser) {
+      await loginWithGoogle();
+      if (!auth.currentUser) return false;
+    }
+    setIsSyncing(true);
+    try {
+      const batch = writeBatch(db);
+      // Championship
+      batch.set(doc(db, 'championships', 'main'), cleanForFirestore(championship));
+      // Clubs
+      clubs.forEach(c => batch.set(doc(db, 'clubs', c.id), cleanForFirestore(c)));
+      // Athletes
+      athletes.forEach(a => batch.set(doc(db, 'athletes', a.id), cleanForFirestore(a)));
+      // Events
+      events.forEach(e => batch.set(doc(db, 'events', e.id), cleanForFirestore(e)));
+      // Incidents
+      incidents.forEach(inc => batch.set(doc(db, 'incidents', inc.id), cleanForFirestore(inc)));
+      // Minutes
+      batch.set(doc(db, 'officialMinutes', 'main'), cleanForFirestore(officialMinutes));
+      // Settings
+      batch.set(doc(db, 'settings', 'config'), cleanForFirestore({
+        customStrokes,
+        customAgeGroups,
+      }));
+      await batch.commit();
+      setIsSyncing(false);
+      return true;
+    } catch (err) {
+      setIsSyncing(false);
+      handleFirestoreError(err, OperationType.WRITE, 'batch_sync');
+      return false;
+    }
   };
 
   // Computations
@@ -857,7 +1162,8 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `SwimRace_${championship.name.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 30)}_${new Date().toISOString().slice(0, 10)}.json`;
+    const titleClean = (championship.name || 'Kejuaraan').replace(/[^a-zA-Z0-9]/g, '_').slice(0, 30);
+    a.download = `SwimRace_${titleClean}_${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -940,6 +1246,12 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         resetToDefaultData,
         exportDatabaseJSON,
         importDatabaseJSON,
+        currentUser,
+        isCloudConnected,
+        isSyncing,
+        loginWithGoogle,
+        logoutGoogle,
+        syncAllToCloud,
       }}
     >
       {children}
