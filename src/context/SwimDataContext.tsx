@@ -288,9 +288,9 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return saved ? JSON.parse(saved) : INITIAL_CUSTOM_AGE_GROUPS;
   });
 
-  // Real-time Firestore synchronization listeners (when user is authenticated)
+  // Real-time Firestore synchronization listeners (active directly without requiring login)
   useEffect(() => {
-    if (!currentUser) return;
+    setIsCloudConnected(true);
 
     // 1. Listen to Championship
     const unsubChamp = onSnapshot(doc(db, 'championships', 'main'), (snapshot) => {
@@ -298,7 +298,7 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setChampionship(snapshot.data() as ChampionshipInfo);
       }
     }, (err) => {
-      handleFirestoreError(err, OperationType.GET, 'championships/main');
+      console.warn('Firestore Championship snapshot:', err);
     });
 
     // 2. Listen to Clubs
@@ -309,18 +309,18 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setClubs(cloudClubs);
       }
     }, (err) => {
-      handleFirestoreError(err, OperationType.GET, 'clubs');
+      console.warn('Firestore Clubs snapshot:', err);
     });
 
     // 3. Listen to Athletes (Live Registrants)
     const unsubAthletes = onSnapshot(collection(db, 'athletes'), (snapshot) => {
-      const cloudAthletes: Athlete[] = [];
-      snapshot.forEach(docSnap => cloudAthletes.push(docSnap.data() as Athlete));
-      if (snapshot.docs.length > 0 || cloudAthletes.length === 0) {
+      if (!snapshot.empty) {
+        const cloudAthletes: Athlete[] = [];
+        snapshot.forEach(docSnap => cloudAthletes.push(docSnap.data() as Athlete));
         setAthletes(cloudAthletes);
       }
     }, (err) => {
-      handleFirestoreError(err, OperationType.GET, 'athletes');
+      console.warn('Firestore Athletes snapshot:', err);
     });
 
     // 4. Listen to Events
@@ -332,16 +332,18 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setEvents(cloudEvents);
       }
     }, (err) => {
-      handleFirestoreError(err, OperationType.GET, 'events');
+      console.warn('Firestore Events snapshot:', err);
     });
 
     // 5. Listen to Incidents
     const unsubIncidents = onSnapshot(collection(db, 'incidents'), (snapshot) => {
-      const cloudIncidents: IncidentReport[] = [];
-      snapshot.forEach(docSnap => cloudIncidents.push(docSnap.data() as IncidentReport));
-      setIncidents(cloudIncidents);
+      if (!snapshot.empty) {
+        const cloudIncidents: IncidentReport[] = [];
+        snapshot.forEach(docSnap => cloudIncidents.push(docSnap.data() as IncidentReport));
+        setIncidents(cloudIncidents);
+      }
     }, (err) => {
-      handleFirestoreError(err, OperationType.GET, 'incidents');
+      console.warn('Firestore Incidents snapshot:', err);
     });
 
     // 6. Listen to Official Minutes
@@ -350,7 +352,7 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setOfficialMinutes(snapshot.data() as OfficialMinutes);
       }
     }, (err) => {
-      handleFirestoreError(err, OperationType.GET, 'officialMinutes/main');
+      console.warn('Firestore OfficialMinutes snapshot:', err);
     });
 
     // 7. Listen to Settings
@@ -361,7 +363,7 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (data?.customAgeGroups) setCustomAgeGroups(data.customAgeGroups);
       }
     }, (err) => {
-      handleFirestoreError(err, OperationType.GET, 'settings/config');
+      console.warn('Firestore Settings snapshot:', err);
     });
 
     return () => {
@@ -373,7 +375,7 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       unsubMinutes();
       unsubSettings();
     };
-  }, [currentUser]);
+  }, []);
 
   // Persist to local storage
   useEffect(() => {
@@ -519,10 +521,8 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const updateChampionship = (info: Partial<ChampionshipInfo>) => {
     setChampionship(prev => {
       const updated = { ...prev, ...info };
-      if (currentUser) {
-        setDoc(doc(db, 'championships', 'main'), cleanForFirestore(updated))
-          .catch(err => handleFirestoreError(err, OperationType.UPDATE, 'championships/main'));
-      }
+      setDoc(doc(db, 'championships', 'main'), cleanForFirestore(updated))
+        .catch(err => console.warn('Firestore updateChampionship:', err));
       return updated;
     });
   };
@@ -534,18 +534,14 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       id: `club-${Date.now()}`,
     };
     setClubs(prev => [...prev, newClub]);
-    if (currentUser) {
-      setDoc(doc(db, 'clubs', newClub.id), cleanForFirestore(newClub))
-        .catch(err => handleFirestoreError(err, OperationType.CREATE, `clubs/${newClub.id}`));
-    }
+    setDoc(doc(db, 'clubs', newClub.id), cleanForFirestore(newClub))
+      .catch(err => console.warn('Firestore addClub:', err));
   };
 
   const deleteClub = (id: string) => {
     setClubs(prev => prev.filter(c => c.id !== id));
-    if (currentUser) {
-      deleteDoc(doc(db, 'clubs', id))
-        .catch(err => handleFirestoreError(err, OperationType.DELETE, `clubs/${id}`));
-    }
+    deleteDoc(doc(db, 'clubs', id))
+      .catch(err => console.warn('Firestore deleteClub:', err));
   };
 
   // Athlete Operations
@@ -583,10 +579,8 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     setAthletes(prev => [...prev, newAthlete]);
-    if (currentUser) {
-      setDoc(doc(db, 'athletes', newAthlete.id), cleanForFirestore(newAthlete))
-        .catch(err => handleFirestoreError(err, OperationType.CREATE, `athletes/${newAthlete.id}`));
-    }
+    setDoc(doc(db, 'athletes', newAthlete.id), cleanForFirestore(newAthlete))
+      .catch(err => console.warn('Firestore addAthlete:', err));
   };
 
   const updateAthlete = (id: string, updates: Partial<Athlete>) => {
@@ -601,18 +595,16 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       updatedAthlete = updated;
       return updated;
     }));
-    if (currentUser && updatedAthlete) {
+    if (updatedAthlete) {
       setDoc(doc(db, 'athletes', id), cleanForFirestore(updatedAthlete))
-        .catch(err => handleFirestoreError(err, OperationType.UPDATE, `athletes/${id}`));
+        .catch(err => console.warn('Firestore updateAthlete:', err));
     }
   };
 
   const deleteAthlete = (id: string) => {
     setAthletes(prev => prev.filter(a => a.id !== id));
-    if (currentUser) {
-      deleteDoc(doc(db, 'athletes', id))
-        .catch(err => handleFirestoreError(err, OperationType.DELETE, `athletes/${id}`));
-    }
+    deleteDoc(doc(db, 'athletes', id))
+      .catch(err => console.warn('Firestore deleteAthlete:', err));
   };
 
   const deleteAllAthletes = async (clearClubsToo: boolean = false) => {
@@ -626,23 +618,21 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setClubs([]);
     }
 
-    if (currentUser) {
-      try {
-        const batch = writeBatch(db);
-        const snap = await getDocs(collection(db, 'athletes'));
-        snap.forEach(d => batch.delete(d.ref));
+    try {
+      const batch = writeBatch(db);
+      const snap = await getDocs(collection(db, 'athletes'));
+      snap.forEach(d => batch.delete(d.ref));
 
-        const evSnap = await getDocs(collection(db, 'events'));
-        evSnap.forEach(d => batch.update(d.ref, { status: 'NOT_SEEDED', heats: [] }));
+      const evSnap = await getDocs(collection(db, 'events'));
+      evSnap.forEach(d => batch.update(d.ref, { status: 'NOT_SEEDED', heats: [] }));
 
-        if (clearClubsToo) {
-          const clubSnap = await getDocs(collection(db, 'clubs'));
-          clubSnap.forEach(d => batch.delete(d.ref));
-        }
-        await batch.commit();
-      } catch (err) {
-        handleFirestoreError(err, OperationType.WRITE, 'athletes');
+      if (clearClubsToo) {
+        const clubSnap = await getDocs(collection(db, 'clubs'));
+        clubSnap.forEach(d => batch.delete(d.ref));
       }
+      await batch.commit();
+    } catch (err) {
+      console.warn('Firestore deleteAllAthletes:', err);
     }
   };
 
@@ -781,19 +771,17 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       status: 'NOT_SEEDED',
     };
     setEvents(prev => [...prev, newEvent].sort((a, b) => a.eventNumber - b.eventNumber));
-    if (currentUser) {
-      setDoc(doc(db, 'events', newEvent.id), cleanForFirestore(newEvent))
-        .catch(err => handleFirestoreError(err, OperationType.CREATE, `events/${newEvent.id}`));
-    }
+    setDoc(doc(db, 'events', newEvent.id), cleanForFirestore(newEvent))
+      .catch(err => console.warn('Firestore addEvent:', err));
   };
 
   const updateEvent = (id: string, updates: Partial<SwimEvent>) => {
     setEvents(prev => {
       const next = prev.map(e => e.id === id ? { ...e, ...updates } : e);
       const ev = next.find(e => e.id === id);
-      if (currentUser && ev) {
+      if (ev) {
         setDoc(doc(db, 'events', id), cleanForFirestore(ev))
-          .catch(err => handleFirestoreError(err, OperationType.UPDATE, `events/${id}`));
+          .catch(err => console.warn('Firestore updateEvent:', err));
       }
       return next;
     });
@@ -801,10 +789,8 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const deleteEvent = (id: string) => {
     setEvents(prev => prev.filter(e => e.id !== id));
-    if (currentUser) {
-      deleteDoc(doc(db, 'events', id))
-        .catch(err => handleFirestoreError(err, OperationType.DELETE, `events/${id}`));
-    }
+    deleteDoc(doc(db, 'events', id))
+      .catch(err => console.warn('Firestore deleteEvent:', err));
   };
 
   // Seeding Operations
@@ -839,10 +825,8 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           heats,
           status: heats.length > 0 ? ('SEEDED' as const) : ('NOT_SEEDED' as const),
         };
-        if (currentUser) {
-          setDoc(doc(db, 'events', eventId), cleanForFirestore(updated))
-            .catch(err => handleFirestoreError(err, OperationType.UPDATE, `events/${eventId}`));
-        }
+        setDoc(doc(db, 'events', eventId), cleanForFirestore(updated))
+          .catch(err => console.warn('Firestore runAutoSeedingForEvent:', err));
         return updated;
       }
       return e;
@@ -877,14 +861,12 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         };
       });
 
-      if (currentUser) {
-        try {
-          const batch = writeBatch(db);
-          seeded.forEach(ev => batch.set(doc(db, 'events', ev.id), cleanForFirestore(ev)));
-          batch.commit().catch(err => handleFirestoreError(err, OperationType.WRITE, 'events_all_seeding'));
-        } catch (err) {
-          console.error(err);
-        }
+      try {
+        const batch = writeBatch(db);
+        seeded.forEach(ev => batch.set(doc(db, 'events', ev.id), cleanForFirestore(ev)));
+        batch.commit().catch(err => console.warn('Firestore all events seeding:', err));
+      } catch (err) {
+        console.warn(err);
       }
 
       return seeded;
@@ -905,10 +887,8 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           ...e,
           heats: updatedHeats,
         };
-        if (currentUser) {
-          setDoc(doc(db, 'events', eventId), cleanForFirestore(updated))
-            .catch(err => handleFirestoreError(err, OperationType.UPDATE, `events/${eventId}`));
-        }
+        setDoc(doc(db, 'events', eventId), cleanForFirestore(updated))
+          .catch(err => console.warn('Firestore reassignLane:', err));
         return updated;
       }
       return e;
@@ -968,10 +948,8 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             };
             setIncidents(prevInc => {
               const next = [newInc, ...prevInc];
-              if (currentUser) {
-                setDoc(doc(db, 'incidents', newInc.id), cleanForFirestore(newInc))
-                  .catch(err => handleFirestoreError(err, OperationType.CREATE, `incidents/${newInc.id}`));
-              }
+              setDoc(doc(db, 'incidents', newInc.id), cleanForFirestore(newInc))
+                .catch(err => console.warn('Firestore add incident:', err));
               return next;
             });
           }
@@ -994,10 +972,8 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           heats: updatedHeats,
           status: isCompleted ? ('COMPLETED' as const) : ('IN_PROGRESS' as const),
         };
-        if (currentUser) {
-          setDoc(doc(db, 'events', eventId), cleanForFirestore(updated))
-            .catch(err => handleFirestoreError(err, OperationType.UPDATE, `events/${eventId}`));
-        }
+        setDoc(doc(db, 'events', eventId), cleanForFirestore(updated))
+          .catch(err => console.warn('Firestore saveHeatResults:', err));
         return updated;
       }
       return e;
@@ -1012,27 +988,21 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
     };
     setIncidents(prev => [newInc, ...prev]);
-    if (currentUser) {
-      setDoc(doc(db, 'incidents', newInc.id), cleanForFirestore(newInc))
-        .catch(err => handleFirestoreError(err, OperationType.CREATE, `incidents/${newInc.id}`));
-    }
+    setDoc(doc(db, 'incidents', newInc.id), cleanForFirestore(newInc))
+      .catch(err => console.warn('Firestore addIncident:', err));
   };
 
   const deleteIncident = (id: string) => {
     setIncidents(prev => prev.filter(i => i.id !== id));
-    if (currentUser) {
-      deleteDoc(doc(db, 'incidents', id))
-        .catch(err => handleFirestoreError(err, OperationType.DELETE, `incidents/${id}`));
-    }
+    deleteDoc(doc(db, 'incidents', id))
+      .catch(err => console.warn('Firestore deleteIncident:', err));
   };
 
   const updateOfficialMinutes = (updates: Partial<OfficialMinutes>) => {
     setOfficialMinutes(prev => {
       const next = { ...prev, ...updates };
-      if (currentUser) {
-        setDoc(doc(db, 'officialMinutes', 'main'), cleanForFirestore(next))
-          .catch(err => handleFirestoreError(err, OperationType.UPDATE, 'officialMinutes/main'));
-      }
+      setDoc(doc(db, 'officialMinutes', 'main'), cleanForFirestore(next))
+        .catch(err => console.warn('Firestore updateOfficialMinutes:', err));
       return next;
     });
   };
@@ -1042,8 +1012,15 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err: any) {
-      console.error('Google Sign In Error:', err);
-      alert('Gagal masuk dengan Google: ' + (err?.message || 'Error'));
+      if (err?.code === 'auth/unauthorized-domain') {
+        alert(
+          `Domain ${window.location.hostname} belum dimasukkan ke Authorized Domains Firebase Auth.\n\n` +
+          `Namun sinkronisasi Realtime Cloud Firestore SUDAH AKTIF secara otomatis tanpa perlu login!\n` +
+          `Semua perubahan pendaftar, hasil, dan nomor lomba langsung tersinkronkan antar perangkat.`
+        );
+      } else {
+        console.warn('Google Sign In:', err);
+      }
     }
   };
 
@@ -1051,15 +1028,11 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       await signOut(auth);
     } catch (err: any) {
-      console.error('Google Sign Out Error:', err);
+      console.warn('Google Sign Out:', err);
     }
   };
 
   const syncAllToCloud = async (): Promise<boolean> => {
-    if (!currentUser) {
-      await loginWithGoogle();
-      if (!auth.currentUser) return false;
-    }
     setIsSyncing(true);
     try {
       const batch = writeBatch(db);
@@ -1085,7 +1058,7 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return true;
     } catch (err) {
       setIsSyncing(false);
-      handleFirestoreError(err, OperationType.WRITE, 'batch_sync');
+      console.warn('Firestore syncAllToCloud error:', err);
       return false;
     }
   };

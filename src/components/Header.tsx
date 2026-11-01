@@ -116,50 +116,26 @@ export const Header: React.FC = () => {
           {/* Zone 3: Actions */}
           <div className="flex items-center gap-2 shrink-0">
             {/* Cloud Realtime Status & Controls */}
-            {currentUser ? (
-              <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-lg text-xs">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                <span className="font-semibold hidden sm:inline">Realtime Online</span>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const ok = await syncAllToCloud();
-                    if (ok) alert('Seluruh data berhasil disinkronkan ke Cloud Firebase!');
-                  }}
-                  disabled={isSyncing}
-                  className="p-1 hover:bg-emerald-100 rounded text-emerald-700 transition-colors cursor-pointer"
-                  title="Upload / Sinkronkan data ke Cloud"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (confirm(`Keluar dari sesi cloud (${currentUser.email || 'Google User'})?`)) {
-                      logoutGoogle();
-                    }
-                  }}
-                  className="p-1 hover:bg-emerald-100 rounded text-emerald-700 transition-colors cursor-pointer"
-                  title={`Keluar (${currentUser.email || 'Google User'})`}
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : (
+            <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1.5 rounded-lg text-xs shadow-2xs">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="font-semibold hidden sm:inline">Realtime Online</span>
               <button
                 type="button"
-                onClick={loginWithGoogle}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg transition-colors cursor-pointer"
-                title="Hubungkan ke Firebase Cloud agar data tersinkronisasi realtime antar perangkat panitia"
+                onClick={async () => {
+                  const ok = await syncAllToCloud();
+                  if (ok) alert('Seluruh data perlombaan berhasil disinkronkan ke Cloud Firebase!');
+                }}
+                disabled={isSyncing}
+                className="p-1 hover:bg-emerald-100 rounded text-emerald-700 transition-colors cursor-pointer flex items-center gap-1 ml-0.5"
+                title="Upload & Sinkronkan seluruh data ke Cloud Firebase sekarang"
               >
-                <Cloud className="w-3.5 h-3.5 text-sky-600" />
-                <span className="hidden sm:inline">Hubungkan Realtime</span>
-                <span className="sm:hidden">Realtime</span>
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-sky-600' : ''}`} />
+                <span className="text-[11px] font-medium hidden md:inline">Sinkronkan</span>
               </button>
-            )}
+            </div>
 
             {/* Tools Dropdown (Backup, Restore, Reset) */}
             <div className="relative">

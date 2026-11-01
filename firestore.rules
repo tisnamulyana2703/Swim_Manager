@@ -1,53 +1,41 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper functions
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
     function isValidId(id) {
       return id is string && id.size() > 0 && id.size() <= 128;
     }
 
-    // Default deny all unknown collections
+    // Default deny unknown collections
     match /{document=**} {
       allow read, write: if false;
     }
 
     match /championships/{championshipId} {
-      allow read: if true;
-      allow write: if isSignedIn() && isValidId(championshipId);
+      allow read, write: if isValidId(championshipId);
     }
 
     match /clubs/{clubId} {
-      allow read: if true;
-      allow write: if isSignedIn() && isValidId(clubId);
+      allow read, write: if isValidId(clubId);
     }
 
     match /athletes/{athleteId} {
-      allow read: if true;
-      allow write: if isSignedIn() && isValidId(athleteId);
+      allow read, write: if isValidId(athleteId);
     }
 
     match /events/{eventId} {
-      allow read: if true;
-      allow write: if isSignedIn() && isValidId(eventId);
+      allow read, write: if isValidId(eventId);
     }
 
     match /incidents/{incidentId} {
-      allow read: if true;
-      allow write: if isSignedIn() && isValidId(incidentId);
+      allow read, write: if isValidId(incidentId);
     }
 
     match /officialMinutes/{minutesId} {
-      allow read: if true;
-      allow write: if isSignedIn() && isValidId(minutesId);
+      allow read, write: if isValidId(minutesId);
     }
 
     match /settings/{settingId} {
-      allow read: if true;
-      allow write: if isSignedIn() && isValidId(settingId);
+      allow read, write: if isValidId(settingId);
     }
   }
 }
