@@ -18,6 +18,7 @@ import { EntryListView } from './components/EntryListView';
 import { NomorListView } from './components/NomorListView';
 import { BukuAcaraView } from './components/BukuAcaraView';
 import { IncidentsView } from './components/IncidentsView';
+import { SpreadsheetSyncView } from './components/SpreadsheetSyncView';
 import { PrintModal } from './components/PrintModal';
 
 const MainContent: React.FC = () => {
@@ -41,6 +42,7 @@ const MainContent: React.FC = () => {
         {activeTab === 'buku_acara' && <BukuAcaraView />}
         {activeTab === 'incidents' && <IncidentsView />}
         {activeTab === 'scoreboard' && <PublicBoardView />}
+        {activeTab === 'spreadsheet' && <SpreadsheetSyncView />}
         {activeTab === 'settings' && <SettingsView />}
       </main>
 

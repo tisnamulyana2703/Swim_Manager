@@ -26,7 +26,8 @@ import {
   Activity,
   Calendar,
   MapPin,
-  Search
+  Search,
+  FileSpreadsheet
 } from 'lucide-react';
 import { STROKE_LABELS, getCategoryLetter } from '../utils/timeUtils';
 
@@ -178,6 +179,15 @@ export const DashboardView: React.FC = () => {
             >
               <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
               <span>Kasus & DQ ({incidents.length})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('spreadsheet')}
+              className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow-sm transition-colors cursor-pointer"
+              title="Simpan seluruh database kejuaraan ke Google Spreadsheet & salin kode .gs"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-white" />
+              <span>Simpan ke Spreadsheet</span>
             </button>
           </div>
         </div>

@@ -72,6 +72,7 @@ export type ActiveTab =
   | 'buku_acara'
   | 'incidents'
   | 'scoreboard'
+  | 'spreadsheet'
   | 'settings';
 
 export type PrintDocumentType = 
@@ -200,6 +201,12 @@ interface SwimDataContextType {
   loginWithGoogle: () => Promise<void>;
   logoutGoogle: () => Promise<void>;
   syncAllToCloud: () => Promise<boolean>;
+
+  // Google Apps Script Spreadsheet Sync
+  googleAppsScriptUrl: string;
+  setGoogleAppsScriptUrl: (url: string) => void;
+  lastSpreadsheetSync: string | null;
+  setLastSpreadsheetSync: (time: string | null) => void;
 }
 
 const SwimDataContext = createContext<SwimDataContextType | undefined>(undefined);
@@ -216,6 +223,28 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isCloudConnected, setIsCloudConnected] = useState<boolean>(false);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
+
+  // Google Apps Script Spreadsheet State
+  const [googleAppsScriptUrl, setGoogleAppsScriptUrlState] = useState<string>(() => {
+    return localStorage.getItem(`${STORAGE_KEY}_gas_url`) || '';
+  });
+  const [lastSpreadsheetSync, setLastSpreadsheetSyncState] = useState<string | null>(() => {
+    return localStorage.getItem(`${STORAGE_KEY}_last_gas_sync`) || null;
+  });
+
+  const setGoogleAppsScriptUrl = (url: string) => {
+    setGoogleAppsScriptUrlState(url);
+    localStorage.setItem(`${STORAGE_KEY}_gas_url`, url);
+  };
+
+  const setLastSpreadsheetSync = (time: string | null) => {
+    setLastSpreadsheetSyncState(time);
+    if (time) {
+      localStorage.setItem(`${STORAGE_KEY}_last_gas_sync`, time);
+    } else {
+      localStorage.removeItem(`${STORAGE_KEY}_last_gas_sync`);
+    }
+  };
 
   // Auth State Listener
   useEffect(() => {
@@ -1261,6 +1290,10 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         loginWithGoogle,
         logoutGoogle,
         syncAllToCloud,
+        googleAppsScriptUrl,
+        setGoogleAppsScriptUrl,
+        lastSpreadsheetSync,
+        setLastSpreadsheetSync,
       }}
     >
       {children}

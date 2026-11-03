@@ -70,6 +70,7 @@ export const Header: React.FC = () => {
     { id: 'buku_acara', label: 'Buku Acara' },
     { id: 'incidents', label: 'Kasus & DQ' },
     { id: 'scoreboard', label: 'Live Skor' },
+    { id: 'spreadsheet', label: 'Spreadsheet' },
   ];
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,6 +120,7 @@ export const Header: React.FC = () => {
               const isActive = activeTab === item.id;
               const isBuku = item.id === 'buku_acara';
               const isIncidents = item.id === 'incidents';
+              const isSpreadsheet = item.id === 'spreadsheet';
 
               return (
                 <button
@@ -130,15 +132,19 @@ export const Header: React.FC = () => {
                           ? 'text-slate-950 bg-amber-400 font-extrabold shadow-2xs' 
                           : isIncidents
                           ? 'text-rose-700 bg-rose-100 font-bold'
+                          : isSpreadsheet
+                          ? 'text-white bg-emerald-700 font-bold shadow-2xs'
                           : 'text-sky-700 bg-sky-100/80 font-bold')
                       : (isBuku 
                           ? 'text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 font-bold' 
                           : isIncidents && incidents.length > 0
                           ? 'text-rose-700 hover:bg-rose-50'
+                          : isSpreadsheet
+                          ? 'text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 font-semibold'
                           : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100')
                   }`}
                 >
-                  <span>{isBuku ? '📖 Buku Acara' : item.label}</span>
+                  <span>{isBuku ? '📖 Buku Acara' : isSpreadsheet ? '📊 Spreadsheet' : item.label}</span>
                   {isIncidents && incidents.length > 0 && (
                     <span className={`px-1 py-0.2 rounded-full text-[10px] font-mono font-bold leading-none ${
                       isActive ? 'bg-rose-600 text-white' : 'bg-rose-100 text-rose-700'
@@ -266,6 +272,17 @@ export const Header: React.FC = () => {
                     Pengaturan & Cadangan
                   </div>
                   
+                  <button
+                    onClick={() => {
+                      setActiveTab('spreadsheet');
+                      setShowToolsMenu(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-emerald-50 flex items-center gap-2 text-emerald-800 font-semibold cursor-pointer"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Simpan ke Google Spreadsheet</span>
+                  </button>
+
                   <button
                     onClick={() => {
                       setActiveTab('settings');
