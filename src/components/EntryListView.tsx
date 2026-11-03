@@ -242,7 +242,7 @@ export const EntryListView: React.FC = () => {
               Daftar Entri Resmi
             </span>
             <span className="text-xs text-slate-400 font-mono">
-              Per {new Date().toLocaleDateString('id-ID')}
+              Per {new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
             </span>
           </div>
           <h1 className="text-xl font-bold text-slate-900 mt-1">

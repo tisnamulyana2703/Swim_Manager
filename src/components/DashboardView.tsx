@@ -29,7 +29,7 @@ import {
   Search,
   FileSpreadsheet
 } from 'lucide-react';
-import { STROKE_LABELS, getCategoryLetter } from '../utils/timeUtils';
+import { STROKE_LABELS, getCategoryLetter, formatDateToDDMMMMYYYY, formatChampionshipDateRange } from '../utils/timeUtils';
 
 export const DashboardView: React.FC = () => {
   const { 
@@ -127,10 +127,10 @@ export const DashboardView: React.FC = () => {
               </span>
               <span className="flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-amber-400" />
-                {championship.startDate} s/d {championship.endDate}
+                {formatChampionshipDateRange(championship.startDate, championship.endDate)}
               </span>
               <span className="text-slate-400">
-                Cutoff Usia: <strong className="text-white font-mono">{championship.cutoffDate}</strong>
+                Cutoff Usia: <strong className="text-white font-mono">{formatDateToDDMMMMYYYY(championship.cutoffDate)}</strong>
               </span>
             </div>
           </div>

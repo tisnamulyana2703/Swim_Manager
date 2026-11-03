@@ -5,7 +5,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useSwimData } from '../context/SwimDataContext';
-import { formatAgeGroupLabel, getCategoryLetter, STROKE_LABELS } from '../utils/timeUtils';
+import { formatAgeGroupLabel, getCategoryLetter, STROKE_LABELS, formatChampionshipDateRange } from '../utils/timeUtils';
 import { 
   BookOpen, 
   Printer, 
@@ -312,7 +312,7 @@ export const BukuAcaraView: React.FC = () => {
             <span>•</span>
             <div className="flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5 text-slate-400" />
-              <span>{championship.startDate} s/d {championship.endDate}</span>
+              <span>{formatChampionshipDateRange(championship.startDate, championship.endDate)}</span>
             </div>
             <span>•</span>
             <div className="flex items-center gap-1">
@@ -421,7 +421,7 @@ export const BukuAcaraView: React.FC = () => {
                                   const regNum = athlete?.regNumber || athlete?.nik || '-';
 
                                   return (
-                                    <tr key={lane.laneNumber} className="hover:bg-slate-50/70 transition-colors">
+                                    <tr key={`ba-heat-${heat.heatNumber}-lane-${lane.laneNumber}`} className="hover:bg-slate-50/70 transition-colors">
                                       {/* Lane */}
                                       <td className="py-2 px-3 text-center font-mono font-extrabold text-slate-950 bg-slate-50/50 border-r border-slate-200">
                                         {lane.laneNumber}

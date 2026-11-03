@@ -62,6 +62,68 @@ export function formatDateToDDMMYYYY(dateStr?: string | null): string {
   return clean;
 }
 
+export const INDONESIAN_MONTHS = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+];
+
+/**
+ * Format string tanggal menjadi format titimangsa resmi "dd MMMM yyyy"
+ * Contoh: "2026-10-22" -> "22 Oktober 2026"
+ */
+export function formatDateToDDMMMMYYYY(dateStr?: string | null): string {
+  if (!dateStr) return '-';
+  const clean = dateStr.trim();
+  if (!clean) return '-';
+
+  // Jika format yyyy-mm-dd atau yyyy/mm/dd
+  const matchYMD = clean.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+  if (matchYMD) {
+    const y = matchYMD[1];
+    const m = parseInt(matchYMD[2], 10);
+    const d = matchYMD[3].padStart(2, '0');
+    const monthName = INDONESIAN_MONTHS[m - 1] || matchYMD[2];
+    return `${d} ${monthName} ${y}`;
+  }
+
+  // Jika format dd-mm-yyyy atau d-m-yyyy
+  const matchDMY = clean.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+  if (matchDMY) {
+    const d = matchDMY[1].padStart(2, '0');
+    const m = parseInt(matchDMY[2], 10);
+    const y = matchDMY[3];
+    const monthName = INDONESIAN_MONTHS[m - 1] || matchDMY[2];
+    return `${d} ${monthName} ${y}`;
+  }
+
+  // Fallback Date object parsing jika ada format standar ISO lain
+  const parsed = new Date(clean);
+  if (!isNaN(parsed.getTime())) {
+    const d = String(parsed.getDate()).padStart(2, '0');
+    const m = parsed.getMonth();
+    const y = parsed.getFullYear();
+    return `${d} ${INDONESIAN_MONTHS[m]} ${y}`;
+  }
+
+  return clean;
+}
+
+/**
+ * Format rentang tanggal titimangsa perlombaan:
+ * Contoh: "2026-10-22" s/d "2026-10-25" -> "22 Oktober 2026 s/d 25 Oktober 2026"
+ */
+export function formatChampionshipDateRange(startDate?: string | null, endDate?: string | null): string {
+  if (!startDate && !endDate) return '-';
+  if (startDate && !endDate) return formatDateToDDMMMMYYYY(startDate);
+  if (!startDate && endDate) return formatDateToDDMMMMYYYY(endDate);
+
+  const startFormatted = formatDateToDDMMMMYYYY(startDate);
+  const endFormatted = formatDateToDDMMMMYYYY(endDate);
+
+  if (startFormatted === endFormatted) return startFormatted;
+  return `${startFormatted} s/d ${endFormatted}`;
+}
+
 /**
  * Konversi Kelompok Usia (KU) menjadi huruf tunggal kategori lomba renang:
  * A: Usia <= 6 tahun

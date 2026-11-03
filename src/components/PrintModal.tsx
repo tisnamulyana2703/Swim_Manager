@@ -5,7 +5,15 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSwimData } from '../context/SwimDataContext';
-import { STROKE_LABELS, formatTimeDifference, formatAgeGroupLabel, formatDateToDDMMYYYY, getCategoryLetter } from '../utils/timeUtils';
+import { 
+  STROKE_LABELS, 
+  formatTimeDifference, 
+  formatAgeGroupLabel, 
+  formatDateToDDMMYYYY, 
+  formatDateToDDMMMMYYYY,
+  formatChampionshipDateRange,
+  getCategoryLetter 
+} from '../utils/timeUtils';
 import { Printer, X, Download, Filter, Sparkles, Edit3 } from 'lucide-react';
 import { SwimEvent } from '../types/swim';
 
@@ -947,7 +955,7 @@ export const PrintModal: React.FC = () => {
                 {championship.name}
               </h1>
               <div className="text-xs text-slate-600">
-                {championship.venue} · Kolam {championship.poolLength} ({championship.poolLanes} Lintasan) · {championship.startDate} s/d {championship.endDate}
+                {championship.venue} · Kolam {championship.poolLength} ({championship.poolLanes} Lintasan) · {formatChampionshipDateRange(championship.startDate, championship.endDate)}
               </div>
             </div>
           )}
@@ -1192,7 +1200,7 @@ export const PrintModal: React.FC = () => {
                   </span>
                 </div>
                 <div className="text-slate-600">
-                  Dicetak pada {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  Dicetak pada {formatDateToDDMMMMYYYY(new Date().toISOString().slice(0, 10))}
                 </div>
               </div>
             </div>
@@ -1215,7 +1223,7 @@ export const PrintModal: React.FC = () => {
                   DAFTAR PESERTA PER NOMOR LOMBA (NOMOR LIST)
                 </div>
                 <div className="text-[11px] text-black mt-0.5">
-                  {championship.venue} · Kolam {championship.poolLength} ({championship.poolLanes} Lintasan) · {championship.startDate} s/d {championship.endDate}
+                  {championship.venue} · Kolam {championship.poolLength} ({championship.poolLanes} Lintasan) · {formatChampionshipDateRange(championship.startDate, championship.endDate)}
                 </div>
               </div>
 
@@ -1317,7 +1325,7 @@ export const PrintModal: React.FC = () => {
                   </span>
                 </div>
                 <div className="text-[11px] text-slate-600">
-                  Dicetak pada {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  Dicetak pada {formatDateToDDMMMMYYYY(new Date().toISOString().slice(0, 10))}
                 </div>
               </div>
             </div>
@@ -1340,7 +1348,7 @@ export const PrintModal: React.FC = () => {
                   BUKU ACARA PERTANDINGAN & SUSUNAN LINTASAN LENGKAP (MEET PROGRAM / START LIST)
                 </div>
                 <div className="text-[11px] text-black mt-0.5">
-                  {championship.venue} · Kolam {championship.poolLength} ({championship.poolLanes} Lintasan) · {championship.startDate} s/d {championship.endDate}
+                  {championship.venue} · Kolam {championship.poolLength} ({championship.poolLanes} Lintasan) · {formatChampionshipDateRange(championship.startDate, championship.endDate)}
                   {bukuAcaraSession !== 'ALL' && ` · Sesi ${bukuAcaraSession}`}
                 </div>
               </div>
@@ -1410,7 +1418,7 @@ export const PrintModal: React.FC = () => {
                                 const ath = athleteMap.get(lane.athleteId);
                                 const clb = ath ? clubMap.get(ath.clubId) : null;
                                 return (
-                                  <tr key={lane.laneNumber} className="hover:bg-slate-50">
+                                  <tr key={`buku-heat-${heat.heatNumber}-lane-${lane.laneNumber}`} className="hover:bg-slate-50">
                                     <td className="border border-black px-1 py-1 text-center font-mono font-bold text-black">{lane.laneNumber}</td>
                                     <td className="border border-black px-1.5 py-1 text-center font-mono font-bold text-black">{ath?.regNumber || ath?.nik || '-'}</td>
                                     <td className="border border-black px-2 py-1 text-left font-bold uppercase text-black">{ath?.name || 'Tanpa Nama'}</td>
@@ -1438,7 +1446,7 @@ export const PrintModal: React.FC = () => {
                   </span>
                 </div>
                 <div className="text-[11px] text-slate-600">
-                  Dicetak pada {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  Dicetak pada {formatDateToDDMMMMYYYY(new Date().toISOString().slice(0, 10))}
                 </div>
               </div>
             </div>
@@ -1461,7 +1469,7 @@ export const PrintModal: React.FC = () => {
                   DAFTAR SUSUNAN LINTASAN PERTANDINGAN (START LIST)
                 </div>
                 <div className="text-[11px] text-black mt-0.5">
-                  {championship.venue} · Kolam {championship.poolLength} ({championship.poolLanes} Lintasan) · {championship.startDate} s/d {championship.endDate}
+                  {championship.venue} · Kolam {championship.poolLength} ({championship.poolLanes} Lintasan) · {formatChampionshipDateRange(championship.startDate, championship.endDate)}
                 </div>
               </div>
 
@@ -1529,7 +1537,7 @@ export const PrintModal: React.FC = () => {
                               const ath = athleteMap.get(lane.athleteId);
                               const clb = ath ? clubMap.get(ath.clubId) : null;
                               return (
-                                <tr key={lane.laneNumber} className="hover:bg-slate-50">
+                                <tr key={`startlist-heat-${heat.heatNumber}-lane-${lane.laneNumber}`} className="hover:bg-slate-50">
                                   <td className="border border-black px-1 py-1 text-center font-mono font-bold text-black">{lane.laneNumber}</td>
                                   <td className="border border-black px-1.5 py-1 text-center font-mono font-bold text-black">{ath?.regNumber || ath?.nik || '-'}</td>
                                   <td className="border border-black px-2 py-1 text-left font-bold uppercase text-black">{ath?.name || 'Tanpa Nama'}</td>
@@ -1556,7 +1564,7 @@ export const PrintModal: React.FC = () => {
                   </span>
                 </div>
                 <div className="text-[11px] text-slate-600">
-                  Dicetak pada {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  Dicetak pada {formatDateToDDMMMMYYYY(new Date().toISOString().slice(0, 10))}
                 </div>
               </div>
             </div>
@@ -1601,7 +1609,7 @@ export const PrintModal: React.FC = () => {
                     const ath = athleteMap.get(lane.athleteId);
                     const clb = ath ? clubMap.get(ath.clubId) : null;
                     return (
-                      <tr key={lane.laneNumber} className={lane.rankInEvent === 1 ? 'bg-amber-50/70 font-semibold' : ''}>
+                      <tr key={`res-${lane.heatNumber}-${lane.laneNumber}-${lane.athleteId || idx}`} className={lane.rankInEvent === 1 ? 'bg-amber-50/70 font-semibold' : ''}>
                         <td className="py-2 px-2 text-center font-mono font-bold border-r">
                           {lane.rankInEvent ? `#${lane.rankInEvent}` : '-'}
                         </td>
@@ -1803,8 +1811,8 @@ export const PrintModal: React.FC = () => {
           {/* Standard Official Signature Blocks (always present at bottom of printed reports except entry_list) */}
           {activePrintDoc !== 'entry_list' && (
             <div className="pt-8 border-t border-slate-400 mt-8 text-xs text-center">
-              <div className="text-right text-[11px] text-slate-500 mb-4">
-                {championship.city}, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+              <div className="text-right text-[11px] text-slate-500 mb-4 font-medium">
+                {championship.city}, {formatDateToDDMMMMYYYY(new Date().toISOString().slice(0, 10))}
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">

@@ -649,7 +649,7 @@ export const NomorListView: React.FC = () => {
                             const isSeededRow = p.heatNumber !== undefined && p.laneNumber !== undefined;
 
                             return (
-                              <tr key={p.athleteId} className="hover:bg-slate-50/80 transition-colors">
+                              <tr key={`${p.athleteId}-${pIdx}`} className="hover:bg-slate-50/80 transition-colors">
                                 {/* No Urut */}
                                 <td className="py-2.5 px-3 text-center font-mono font-medium text-slate-500">
                                   {pIdx + 1}

@@ -376,7 +376,7 @@ export const TimekeeperView: React.FC = () => {
                   const dqRule = laneDQRules[lane.laneNumber];
 
                   return (
-                    <tr key={lane.laneNumber} className="hover:bg-slate-50/70 transition-colors">
+                    <tr key={`tk-heat-${currentHeat.heatNumber}-lane-${lane.laneNumber}`} className="hover:bg-slate-50/70 transition-colors">
                       {/* Lane Number & Assigned Timekeeper */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-2">
