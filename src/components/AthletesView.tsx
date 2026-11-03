@@ -6,7 +6,7 @@
 import React, { useState, useMemo } from 'react';
 import { useSwimData } from '../context/SwimDataContext';
 import { Athlete, AgeGroupCode } from '../types/swim';
-import { calculateAge, determineAgeGroup, parseTimeToMs, generateRegisterNumber, formatAgeGroupLabel, formatDateToDDMMYYYY } from '../utils/timeUtils';
+import { calculateAge, determineAgeGroup, parseTimeToMs, generateRegisterNumber, formatAgeGroupLabel, formatDateToDDMMYYYY, getCategoryLetter } from '../utils/timeUtils';
 import { 
   Plus, 
   Search, 
@@ -351,7 +351,7 @@ export const AthletesView: React.FC = () => {
                     <th className="py-3 px-4">Nama Lengkap & No. Register</th>
                     <th className="py-3 px-4">Gender</th>
                     <th className="py-3 px-4">Tgl Lahir / Usia</th>
-                    <th className="py-3 px-4">Kelompok Usia</th>
+                    <th className="py-3 px-4 text-center">KU</th>
                     <th className="py-3 px-4">Asal Klub</th>
                     <th className="py-3 px-4">Nomor Lomba Terdaftar</th>
                     <th className="py-3 px-4 text-right">Aksi</th>
@@ -384,8 +384,8 @@ export const AthletesView: React.FC = () => {
                           <td className="py-3 px-4 font-mono tabular-nums">
                             {formatDateToDDMMYYYY(ath.birthDate)} ({ath.age} th)
                           </td>
-                          <td className="py-3 px-4 font-semibold text-slate-700">
-                            {formatAgeGroupLabel(ath.ageGroup, ath.age)}
+                          <td className="py-3 px-4 text-center font-bold text-slate-800">
+                            {getCategoryLetter(ath.ageGroup, ath.age)}
                           </td>
                           <td className="py-3 px-4">
                             <span className="font-medium text-slate-800">{club?.code || '-'}</span>

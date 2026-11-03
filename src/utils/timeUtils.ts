@@ -129,29 +129,29 @@ export function formatAgeGroupLabel(code: string, age?: number): string {
   }
 
   switch (code) {
-    case 'AGE_6_UNDER': return 'A (Usia ≤6 Thn)';
-    case 'AGE_7': return 'B (Usia 7 Thn)';
-    case 'AGE_8': return 'C (Usia 8 Thn)';
-    case 'AGE_9': return 'D (Usia 9 Thn)';
-    case 'AGE_10': return 'E (Usia 10 Thn)';
-    case 'AGE_11': return 'F (Usia 11 Thn)';
-    case 'AGE_12': return 'G (Usia 12 Thn)';
-    case 'AGE_13': return 'H (Usia 13 Thn)';
-    case 'AGE_14': return 'I (Usia 14 Thn)';
-    case 'AGE_15': return 'I (Usia 15 Thn)';
-    case 'AGE_16_18': return 'I (Usia 16-18 Thn)';
-    case 'AGE_19_ABOVE': return 'I (Usia 19+ Thn)';
-    case 'AGE_14_ABOVE': return 'I (Usia 14+ Thn)';
+    case 'AGE_6_UNDER': return 'A';
+    case 'AGE_7': return 'B';
+    case 'AGE_8': return 'C';
+    case 'AGE_9': return 'D';
+    case 'AGE_10': return 'E';
+    case 'AGE_11': return 'F';
+    case 'AGE_12': return 'G';
+    case 'AGE_13': return 'H';
+    case 'AGE_14': return 'I';
+    case 'AGE_15': return 'I';
+    case 'AGE_16_18': return 'I';
+    case 'AGE_19_ABOVE': return 'I';
+    case 'AGE_14_ABOVE': return 'I';
     case 'OPEN': return 'Terbuka';
-    case 'KU_I': return 'I (Usia 16-18 Thn)';
-    case 'KU_II': return 'I (Usia 14-15 Thn)';
-    case 'KU_III': return 'G-H (Usia 12-13 Thn)';
-    case 'KU_IV': return 'E-F (Usia 10-11 Thn)';
-    case 'KU_V': return 'A-D (Usia ≤9 Thn)';
-    case 'SENIOR': return 'I (Usia 19+ Thn)';
+    case 'KU_I': return 'I';
+    case 'KU_II': return 'I';
+    case 'KU_III': return 'G-H';
+    case 'KU_IV': return 'E-F';
+    case 'KU_V': return 'A-D';
+    case 'SENIOR': return 'I';
     default:
-      if (age !== undefined && age > 0) return `${getCategoryLetter(code, age)} (Usia ${age} Thn)`;
-      return code ? code.replace(/_/g, ' ') : '-';
+      if (age !== undefined && age > 0) return getCategoryLetter(code, age);
+      return getCategoryLetter(code);
   }
 }
 
