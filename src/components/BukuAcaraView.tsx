@@ -177,27 +177,6 @@ export const BukuAcaraView: React.FC = () => {
         </div>
       </div>
 
-      {/* Unseeded Warning Banner if any event has no heats */}
-      {unseededEvents.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-900 print:hidden">
-          <div className="flex items-center gap-2.5">
-            <Info className="w-4 h-4 text-amber-600 shrink-0" />
-            <div>
-              <span className="font-bold">Perhatian:</span>{' '}
-              <span>Terdapat <strong>{unseededEvents.length} nomor lomba</strong> yang belum memiliki pembagian seri (heats).</span>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              runAutoSeedingForAllEvents();
-              alert('Auto-seeding selesai untuk seluruh nomor lomba yang terdaftar!');
-            }}
-            className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-md shadow-2xs transition-colors cursor-pointer shrink-0"
-          >
-            Susun Seri Otomatis Sekarang
-          </button>
-        </div>
-      )}
 
       {/* Filter and Sub-navigation Bar */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
