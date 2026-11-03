@@ -30,6 +30,92 @@ export const AGE_GROUPS: AgeGroupConfig[] = [
 ];
 
 /**
+ * Format string tanggal lahir menjadi "dd-mm-yyyy"
+ * Menerima format "yyyy-mm-dd", "dd-mm-yyyy", dsb.
+ */
+export function formatDateToDDMMYYYY(dateStr?: string | null): string {
+  if (!dateStr) return '-';
+  const clean = dateStr.trim();
+  if (!clean) return '-';
+
+  // Jika sudah dd-mm-yyyy
+  if (/^\d{2}-\d{2}-\d{4}$/.test(clean)) return clean;
+
+  // Jika yyyy-mm-dd atau yyyy/mm/dd
+  const matchYMD = clean.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+  if (matchYMD) {
+    const y = matchYMD[1];
+    const m = matchYMD[2].padStart(2, '0');
+    const d = matchYMD[3].padStart(2, '0');
+    return `${d}-${m}-${y}`;
+  }
+
+  // Jika d-m-yyyy atau dd-m-yyyy
+  const matchDMY = clean.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+  if (matchDMY) {
+    const d = matchDMY[1].padStart(2, '0');
+    const m = matchDMY[2].padStart(2, '0');
+    const y = matchDMY[3];
+    return `${d}-${m}-${y}`;
+  }
+
+  return clean;
+}
+
+/**
+ * Konversi Kelompok Usia (KU) menjadi huruf tunggal kategori lomba renang:
+ * A: Usia <= 6 tahun
+ * B: Usia 7 tahun
+ * C: Usia 8 tahun
+ * D: Usia 9 tahun
+ * E: Usia 10 tahun
+ * F: Usia 11 tahun
+ * G: Usia 12 tahun
+ * H: Usia 13 tahun
+ * I: Usia 14+ tahun
+ */
+export function getCategoryLetter(ageGroup?: string | null, age?: number | null): string {
+  if (age !== undefined && age !== null && age > 0) {
+    if (age <= 6) return 'A';
+    if (age === 7) return 'B';
+    if (age === 8) return 'C';
+    if (age === 9) return 'D';
+    if (age === 10) return 'E';
+    if (age === 11) return 'F';
+    if (age === 12) return 'G';
+    if (age === 13) return 'H';
+    return 'I';
+  }
+
+  if (ageGroup) {
+    const clean = ageGroup.toUpperCase().trim();
+    if (clean === 'AGE_6_UNDER' || clean === 'A' || clean === 'KU_V' || clean === 'KU V') return 'A';
+    if (clean === 'AGE_7' || clean === 'B') return 'B';
+    if (clean === 'AGE_8' || clean === 'C') return 'C';
+    if (clean === 'AGE_9' || clean === 'D') return 'D';
+    if (clean === 'AGE_10' || clean === 'E' || clean === 'KU_IV' || clean === 'KU IV') return 'E';
+    if (clean === 'AGE_11' || clean === 'F') return 'F';
+    if (clean === 'AGE_12' || clean === 'G' || clean === 'KU_III' || clean === 'KU III') return 'G';
+    if (clean === 'AGE_13' || clean === 'H') return 'H';
+    if (
+      clean === 'AGE_14_ABOVE' || 
+      clean === 'AGE_14' || 
+      clean === 'AGE_15' || 
+      clean === 'AGE_16_18' || 
+      clean === 'AGE_19_ABOVE' || 
+      clean === 'SENIOR' || 
+      clean === 'KU_I' || 
+      clean === 'KU_II' || 
+      clean === 'I'
+    ) return 'I';
+
+    if (/^[A-I]$/i.test(clean)) return clean.toUpperCase();
+  }
+
+  return '-';
+}
+
+/**
  * Format label kelompok usia
  */
 export function formatAgeGroupLabel(code: string, age?: number): string {
@@ -43,28 +129,28 @@ export function formatAgeGroupLabel(code: string, age?: number): string {
   }
 
   switch (code) {
-    case 'AGE_6_UNDER': return 'Usia ≤6 Thn';
-    case 'AGE_7': return 'Usia 7 Thn';
-    case 'AGE_8': return 'Usia 8 Thn';
-    case 'AGE_9': return 'Usia 9 Thn';
-    case 'AGE_10': return 'Usia 10 Thn';
-    case 'AGE_11': return 'Usia 11 Thn';
-    case 'AGE_12': return 'Usia 12 Thn';
-    case 'AGE_13': return 'Usia 13 Thn';
-    case 'AGE_14': return 'Usia 14 Thn';
-    case 'AGE_15': return 'Usia 15 Thn';
-    case 'AGE_16_18': return 'Usia 16-18 Thn';
-    case 'AGE_19_ABOVE': return 'Usia 19+ Thn';
-    case 'AGE_14_ABOVE': return 'Usia 14+ Thn';
+    case 'AGE_6_UNDER': return 'A (Usia ≤6 Thn)';
+    case 'AGE_7': return 'B (Usia 7 Thn)';
+    case 'AGE_8': return 'C (Usia 8 Thn)';
+    case 'AGE_9': return 'D (Usia 9 Thn)';
+    case 'AGE_10': return 'E (Usia 10 Thn)';
+    case 'AGE_11': return 'F (Usia 11 Thn)';
+    case 'AGE_12': return 'G (Usia 12 Thn)';
+    case 'AGE_13': return 'H (Usia 13 Thn)';
+    case 'AGE_14': return 'I (Usia 14 Thn)';
+    case 'AGE_15': return 'I (Usia 15 Thn)';
+    case 'AGE_16_18': return 'I (Usia 16-18 Thn)';
+    case 'AGE_19_ABOVE': return 'I (Usia 19+ Thn)';
+    case 'AGE_14_ABOVE': return 'I (Usia 14+ Thn)';
     case 'OPEN': return 'Terbuka';
-    case 'KU_I': return 'Usia 16-18 Thn';
-    case 'KU_II': return 'Usia 14-15 Thn';
-    case 'KU_III': return 'Usia 12-13 Thn';
-    case 'KU_IV': return 'Usia 10-11 Thn';
-    case 'KU_V': return 'Usia ≤9 Thn';
-    case 'SENIOR': return 'Usia 19+ Thn';
+    case 'KU_I': return 'I (Usia 16-18 Thn)';
+    case 'KU_II': return 'I (Usia 14-15 Thn)';
+    case 'KU_III': return 'G-H (Usia 12-13 Thn)';
+    case 'KU_IV': return 'E-F (Usia 10-11 Thn)';
+    case 'KU_V': return 'A-D (Usia ≤9 Thn)';
+    case 'SENIOR': return 'I (Usia 19+ Thn)';
     default:
-      if (age !== undefined && age > 0) return `Usia ${age} Thn`;
+      if (age !== undefined && age > 0) return `${getCategoryLetter(code, age)} (Usia ${age} Thn)`;
       return code ? code.replace(/_/g, ' ') : '-';
   }
 }

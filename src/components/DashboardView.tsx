@@ -104,11 +104,11 @@ export const DashboardView: React.FC = () => {
             </button>
 
             <button
-              onClick={() => openPrintModal('official_minutes')}
+              onClick={() => setActiveTab('buku_acara')}
               className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white backdrop-blur-xs text-sm font-semibold rounded-lg border border-white/15 transition-colors cursor-pointer"
             >
-              <FileText className="w-4 h-4 text-amber-300" />
-              <span>Buka Berita Acara Lomba</span>
+              <BookOpen className="w-4 h-4 text-amber-300" />
+              <span>Buka Buku Acara Lomba</span>
             </button>
 
             <button
@@ -377,13 +377,6 @@ export const DashboardView: React.FC = () => {
               >
                 <span>Klasemen Perolehan Medali Kontingen</span>
                 <span className="text-slate-400">→</span>
-              </button>
-              <button
-                onClick={() => openPrintModal('official_minutes')}
-                className="w-full text-left px-3 py-2 text-xs font-medium bg-sky-600 hover:bg-sky-500 rounded-lg flex items-center justify-between font-semibold transition-colors"
-              >
-                <span>Berita Acara Resmi Lengkap</span>
-                <span>→</span>
               </button>
             </div>
           </div>

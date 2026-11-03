@@ -480,15 +480,6 @@ export const SettingsView: React.FC = () => {
         <div className="flex items-center gap-2.5 flex-wrap">
           <button
             type="button"
-            onClick={() => openPrintModal('official_minutes')}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors shadow-2xs"
-          >
-            <Printer className="w-3.5 h-3.5 text-slate-500" />
-            <span>Lihat di Berita Acara</span>
-          </button>
-
-          <button
-            type="button"
             onClick={() => handleSaveAll()}
             className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg transition-colors shadow-xs"
           >

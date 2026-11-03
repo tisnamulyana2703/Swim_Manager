@@ -5,7 +5,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useSwimData } from '../context/SwimDataContext';
-import { formatAgeGroupLabel, STROKE_LABELS } from '../utils/timeUtils';
+import { formatAgeGroupLabel, getCategoryLetter, STROKE_LABELS } from '../utils/timeUtils';
 import { 
   BookOpen, 
   Printer, 
@@ -430,7 +430,7 @@ export const BukuAcaraView: React.FC = () => {
                                   <th className="py-2.5 px-3 w-14 text-center border-r border-slate-200">Lint.</th>
                                   <th className="py-2.5 px-3 w-28 border-r border-slate-200">No. Reg</th>
                                   <th className="py-2.5 px-3 border-r border-slate-200">Nama Lengkap Atlet</th>
-                                  <th className="py-2.5 px-3 text-center w-16 border-r border-slate-200">Usia</th>
+                                  <th className="py-2.5 px-3 text-center w-14 border-r border-slate-200">KU</th>
                                   <th className="py-2.5 px-3 border-r border-slate-200">Klub / Kontingen</th>
                                   <th className="py-2.5 px-3 text-right font-mono w-28">Seed Time</th>
                                 </tr>
@@ -458,9 +458,9 @@ export const BukuAcaraView: React.FC = () => {
                                         {athlete?.name || 'Kosong / Tanpa Nama'}
                                       </td>
 
-                                      {/* Age */}
-                                      <td className="py-2 px-3 text-center text-slate-700 font-mono text-[11px] border-r border-slate-200">
-                                        {athlete?.age ? `${athlete.age} th` : '-'}
+                                      {/* KU (Category Letter A, B, C, etc.) */}
+                                      <td className="py-2 px-3 text-center text-slate-900 font-bold font-mono text-xs border-r border-slate-200">
+                                        {getCategoryLetter(athlete?.ageGroup, athlete?.age)}
                                       </td>
 
                                       {/* Club */}

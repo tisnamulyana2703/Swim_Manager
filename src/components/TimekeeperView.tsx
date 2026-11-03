@@ -77,13 +77,13 @@ export const TimekeeperView: React.FC = () => {
     const initialReasons: Record<number, string> = {};
 
     currentHeat.lanes.forEach(lane => {
-      const timeVal = lane.finalTime || '';
+      const timeVal = lane.finalTime || '00:00.00';
       initialTimes[lane.laneNumber] = timeVal;
 
       const parts = splitTimeComponents(timeVal);
-      initialMin[lane.laneNumber] = parts.minutes;
-      initialSec[lane.laneNumber] = parts.seconds;
-      initialCenti[lane.laneNumber] = parts.centiseconds;
+      initialMin[lane.laneNumber] = parts.minutes || '00';
+      initialSec[lane.laneNumber] = parts.seconds || '00';
+      initialCenti[lane.laneNumber] = parts.centiseconds || '00';
 
       initialStatuses[lane.laneNumber] = lane.status === 'PENDING' ? 'OK' : lane.status;
       if (lane.dqRuleCode) initialRules[lane.laneNumber] = lane.dqRuleCode;
@@ -172,10 +172,10 @@ export const TimekeeperView: React.FC = () => {
   };
 
   const handleClearLaneTime = (laneNumber: number) => {
-    setLaneMin(prev => ({ ...prev, [laneNumber]: '' }));
-    setLaneSec(prev => ({ ...prev, [laneNumber]: '' }));
-    setLaneCenti(prev => ({ ...prev, [laneNumber]: '' }));
-    setLaneTimes(prev => ({ ...prev, [laneNumber]: '' }));
+    setLaneMin(prev => ({ ...prev, [laneNumber]: '00' }));
+    setLaneSec(prev => ({ ...prev, [laneNumber]: '00' }));
+    setLaneCenti(prev => ({ ...prev, [laneNumber]: '00' }));
+    setLaneTimes(prev => ({ ...prev, [laneNumber]: '00:00.00' }));
   };
 
   const handleKeyDown = (
@@ -449,7 +449,7 @@ export const TimekeeperView: React.FC = () => {
                               disabled={currentStatus !== 'OK'}
                               onChange={e => handleSecChange(lane.laneNumber, e.target.value)}
                               onKeyDown={e => handleKeyDown(e, lane.laneNumber, 'sec')}
-                              placeholder="25"
+                              placeholder="00"
                               title="Detik (0-59)"
                               className="w-11 px-1 py-1.5 text-center text-xs font-mono font-bold bg-white border border-slate-300 rounded-md focus:border-sky-500 focus:bg-sky-50/40 focus:outline-hidden disabled:bg-slate-100 disabled:text-slate-400 tabular-nums shadow-2xs"
                             />
@@ -469,7 +469,7 @@ export const TimekeeperView: React.FC = () => {
                               disabled={currentStatus !== 'OK'}
                               onChange={e => handleCentiChange(lane.laneNumber, e.target.value)}
                               onKeyDown={e => handleKeyDown(e, lane.laneNumber, 'centi')}
-                              placeholder="40"
+                              placeholder="00"
                               title="Perseratus Detik (0-99)"
                               className="w-11 px-1 py-1.5 text-center text-xs font-mono font-bold bg-white border border-slate-300 rounded-md focus:border-sky-500 focus:bg-sky-50/40 focus:outline-hidden disabled:bg-slate-100 disabled:text-slate-400 tabular-nums shadow-2xs"
                             />

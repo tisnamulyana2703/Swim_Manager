@@ -71,8 +71,7 @@ export type ActiveTab =
   | 'results' 
   | 'buku_acara'
   | 'scoreboard'
-  | 'settings'
-  | 'minutes';
+  | 'settings';
 
 export type PrintDocumentType = 
   | 'entry_list'
@@ -83,7 +82,6 @@ export type PrintDocumentType =
   | 'result_sheet' 
   | 'medal_tally' 
   | 'best_swimmer' 
-  | 'official_minutes'
   | null;
 
 interface SwimDataContextType {
@@ -558,11 +556,14 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const age = calculateAge(data.birthDate, championship.cutoffDate);
     const ageGroup = determineAgeGroup(age);
 
-    const regEvents = (data.registeredEvents || []).map(r => ({
-      eventId: r.eventId,
-      seedTime: r.seedTime || '00:00.00',
-      seedTimeMs: parseTimeToMs(r.seedTime),
-    }));
+    const regEvents = (data.registeredEvents || []).map(r => {
+      const cleanTime = (!r.seedTime || r.seedTime.trim() === '' || r.seedTime.trim() === '00:00.00' || r.seedTime.trim() === '0') ? 'NT' : r.seedTime.trim();
+      return {
+        eventId: r.eventId,
+        seedTime: cleanTime,
+        seedTimeMs: parseTimeToMs(cleanTime),
+      };
+    });
 
     const regNumber = data.regNumber || generateRegisterNumber(data.name, athletes.length + 1);
 
@@ -592,6 +593,16 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (updates.birthDate) {
         updated.age = calculateAge(updates.birthDate, championship.cutoffDate);
         updated.ageGroup = determineAgeGroup(updated.age);
+      }
+      if (updates.registeredEvents) {
+        updated.registeredEvents = updates.registeredEvents.map(r => {
+          const cleanTime = (!r.seedTime || r.seedTime.trim() === '' || r.seedTime.trim() === '00:00.00' || r.seedTime.trim() === '0') ? 'NT' : r.seedTime.trim();
+          return {
+            ...r,
+            seedTime: cleanTime,
+            seedTimeMs: parseTimeToMs(cleanTime),
+          };
+        });
       }
       updatedAthlete = updated;
       return updated;

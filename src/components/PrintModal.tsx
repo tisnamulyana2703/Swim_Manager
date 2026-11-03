@@ -5,7 +5,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSwimData } from '../context/SwimDataContext';
-import { STROKE_LABELS, formatTimeDifference, formatAgeGroupLabel } from '../utils/timeUtils';
+import { STROKE_LABELS, formatTimeDifference, formatAgeGroupLabel, formatDateToDDMMYYYY, getCategoryLetter } from '../utils/timeUtils';
 import { Printer, X, Download, Filter, Sparkles, Edit3 } from 'lucide-react';
 import { SwimEvent } from '../types/swim';
 
@@ -231,17 +231,7 @@ export const PrintModal: React.FC = () => {
 
   // Helper functions for Indonesian official entry list format
   const getKU = (ageGroup: string, age: number): string => {
-    if (ageGroup === 'KU_I' || ageGroup === 'KU I') return 'KU I';
-    if (ageGroup === 'KU_II' || ageGroup === 'KU II') return 'KU II';
-    if (ageGroup === 'KU_III' || ageGroup === 'KU III') return 'KU III';
-    if (ageGroup === 'KU_IV' || ageGroup === 'KU IV') return 'KU IV';
-    if (ageGroup === 'KU_V' || ageGroup === 'KU V') return 'KU V';
-    if (age >= 19) return 'Senior';
-    if (age >= 16) return 'KU I';
-    if (age >= 14) return 'KU II';
-    if (age >= 12) return 'KU III';
-    if (age >= 10) return 'KU IV';
-    return 'KU V';
+    return getCategoryLetter(ageGroup, age);
   };
 
   const getDisplayRegNumber = (reg?: string, idx: number = 0): string => {
@@ -255,14 +245,24 @@ export const PrintModal: React.FC = () => {
   const getDateParts = (birthDate?: string, age: number = 10) => {
     if (!birthDate || !birthDate.includes('-')) {
       const currentYear = new Date().getFullYear();
-      return { day: '1', month: '1', year: (currentYear - age).toString() };
+      return { day: '01', month: '01', year: (currentYear - age).toString() };
     }
-    const [y, m, d] = birthDate.split('-');
-    return {
-      day: parseInt(d, 10).toString(),
-      month: parseInt(m, 10).toString(),
-      year: y,
-    };
+    const parts = birthDate.split('-');
+    if (parts[0].length === 4) {
+      // yyyy-mm-dd
+      return {
+        day: (parts[2] || '01').padStart(2, '0'),
+        month: (parts[1] || '01').padStart(2, '0'),
+        year: parts[0] || '2016',
+      };
+    } else {
+      // dd-mm-yyyy
+      return {
+        day: (parts[0] || '01').padStart(2, '0'),
+        month: (parts[1] || '01').padStart(2, '0'),
+        year: parts[2] || '2016',
+      };
+    }
   };
 
   const getEventIndonesianTitle = (ev: SwimEvent | undefined, athGender: 'MALE' | 'FEMALE', ku: string): string => {
@@ -278,7 +278,8 @@ export const PrintModal: React.FC = () => {
     };
     const strokeName = strokeMap[ev.stroke] || ev.stroke;
     const genderName = athGender === 'MALE' ? 'Putra' : 'Putri';
-    return `${ev.distance} M ${strokeName} ${ku} ${genderName}`;
+    const catLabel = ku ? `Kat. ${ku}` : '';
+    return `${ev.distance} M ${strokeName} ${catLabel} ${genderName}`.replace(/\s+/g, ' ').trim();
   };
 
   // Compile Entry List rows matching exact reference layout
@@ -886,16 +887,6 @@ export const PrintModal: React.FC = () => {
           >
             🥇 Perolehan Medali
           </button>
-          <button
-            onClick={() => openPrintModal('official_minutes')}
-            className={`px-2.5 py-1 rounded-md font-semibold shrink-0 transition-colors cursor-pointer ${
-              activePrintDoc === 'official_minutes'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-300 hover:text-white hover:bg-slate-700'
-            }`}
-          >
-            📜 Berita Acara
-          </button>
         </div>
 
         {/* Collapsible Contact Editor Toolbar (screen-only) */}
@@ -1315,7 +1306,7 @@ export const PrintModal: React.FC = () => {
                               <td className="border border-black px-2 py-1 text-left font-bold uppercase">{p.name}</td>
                               <td className="border border-black px-1 py-1 text-center font-semibold">{p.gender === 'MALE' ? 'L' : 'P'}</td>
                               <td className="border border-black px-1 py-1 text-center font-medium">{getKU(p.ageGroup, p.age)}</td>
-                              <td className="border border-black px-1 py-1 text-center font-mono">{p.birthDate || '-'}</td>
+                              <td className="border border-black px-1 py-1 text-center font-mono">{formatDateToDDMMYYYY(p.birthDate)}</td>
                               <td className="border border-black px-1 py-1 text-center font-mono font-medium">{p.age}</td>
                               <td className="border border-black px-2 py-1 text-left uppercase font-medium">{p.clubName}</td>
                               <td className="border border-black px-1.5 py-1 text-center font-mono font-bold">{p.seedTime || 'NT'}</td>
@@ -1451,7 +1442,7 @@ export const PrintModal: React.FC = () => {
                                     <td className="border border-black px-2 py-1 text-left font-bold uppercase text-black">{ath?.name || 'Tanpa Nama'}</td>
                                     <td className="border border-black px-1 py-1 text-center font-semibold text-black">{ath?.gender === 'MALE' ? 'L' : 'P'}</td>
                                     <td className="border border-black px-1 py-1 text-center font-medium text-black">{getKU(ath?.ageGroup || '', ath?.age || 0)}</td>
-                                    <td className="border border-black px-1 py-1 text-center font-mono text-black">{ath?.birthDate || '-'} ({ath?.age || '-'} th)</td>
+                                    <td className="border border-black px-1 py-1 text-center font-mono text-black">{formatDateToDDMMYYYY(ath?.birthDate)} ({ath?.age || '-'} th)</td>
                                     <td className="border border-black px-2 py-1 text-left uppercase font-medium text-black">{clb?.name || '-'} ({clb?.code || '-'})</td>
                                     <td className="border border-black px-1.5 py-1 text-center font-mono font-bold text-black">{lane.seedTime || 'NT'}</td>
                                   </tr>
@@ -1573,7 +1564,7 @@ export const PrintModal: React.FC = () => {
                                   <td className="border border-black px-2 py-1 text-left font-bold uppercase text-black">{ath?.name || 'Tanpa Nama'}</td>
                                   <td className="border border-black px-1 py-1 text-center font-semibold text-black">{ath?.gender === 'MALE' ? 'L' : 'P'}</td>
                                   <td className="border border-black px-1 py-1 text-center font-medium text-black">{getKU(ath?.ageGroup || '', ath?.age || 0)}</td>
-                                  <td className="border border-black px-1 py-1 text-center font-mono text-black">{ath?.birthDate || '-'} ({ath?.age || '-'} th)</td>
+                                  <td className="border border-black px-1 py-1 text-center font-mono text-black">{formatDateToDDMMYYYY(ath?.birthDate)} ({ath?.age || '-'} th)</td>
                                   <td className="border border-black px-2 py-1 text-left uppercase font-medium text-black">{clb?.name || '-'} ({clb?.code || '-'})</td>
                                   <td className="border border-black px-1.5 py-1 text-center font-mono font-bold text-black">{lane.seedTime || 'NT'}</td>
                                 </tr>
@@ -1766,80 +1757,7 @@ export const PrintModal: React.FC = () => {
             </div>
           )}
 
-          {/* DOCUMENT 5: BERITA ACARA RESMI */}
-          {activePrintDoc === 'official_minutes' && (
-            <div className="space-y-6">
-              <div className="border-b border-slate-300 pb-2 text-center">
-                <div className="text-xs font-bold uppercase text-slate-500">BERITA ACARA RESMI PERLOMBAAN</div>
-                <h2 className="text-base font-extrabold text-slate-900">
-                  LAPORAN TEKNIS DELEGASI & WASIT UTAMA
-                </h2>
-                <div className="text-xs text-slate-600 font-mono mt-0.5">
-                  Nomor Dokumen: {officialMinutes.docNumber} · Tanggal {officialMinutes.generatedDate}
-                </div>
-              </div>
 
-              {/* Conditions summary */}
-              <div className="grid grid-cols-2 gap-4 text-xs bg-slate-50 p-4 rounded-lg border border-slate-200">
-                <div>
-                  <span className="font-bold text-slate-500 block uppercase text-[10px]">Kondisi Cuaca & Suhu Udara:</span>
-                  <div className="font-medium text-slate-800 mt-0.5">{officialMinutes.weatherNotes}</div>
-                </div>
-                <div>
-                  <span className="font-bold text-slate-500 block uppercase text-[10px]">Suhu Air Kolam (Water Temp):</span>
-                  <div className="font-medium text-slate-800 mt-0.5">{officialMinutes.waterTemp}</div>
-                </div>
-              </div>
-
-              {/* Incidents table if any */}
-              <div>
-                <h3 className="text-xs font-bold uppercase text-slate-700 mb-2">
-                  Daftar Insiden Teknis, Diskualifikasi (DQ), dan Protes:
-                </h3>
-                {incidents.length === 0 ? (
-                  <div className="p-4 border border-dashed border-slate-200 rounded text-center text-xs text-slate-400">
-                    Tidak ada insiden teknis atau protes resmi yang tercatat selama perlombaan.
-                  </div>
-                ) : (
-                  <table className="w-full text-left text-xs border border-slate-300">
-                    <thead className="bg-slate-100 border-b border-slate-300 font-bold text-slate-700 text-[11px]">
-                      <tr>
-                        <th className="py-1.5 px-2 w-16 border-r">Waktu</th>
-                        <th className="py-1.5 px-2 border-r">Tipe</th>
-                        <th className="py-1.5 px-3 border-r">Nomor / Atlet</th>
-                        <th className="py-1.5 px-3 border-r">Keterangan Aturan World Aquatics</th>
-                        <th className="py-1.5 px-2 text-center">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200">
-                      {incidents.map((inc) => (
-                        <tr key={inc.id}>
-                          <td className="py-1.5 px-2 font-mono text-slate-500 border-r">{inc.timestamp}</td>
-                          <td className="py-1.5 px-2 font-bold text-slate-800 border-r">{inc.ruleCode}</td>
-                          <td className="py-1.5 px-3 border-r">
-                            <div className="font-bold text-slate-900">{inc.athleteName || '-'}</div>
-                            <div className="text-[10px] text-slate-500">{inc.eventTitle} (H{inc.heatNumber}/L{inc.laneNumber})</div>
-                          </td>
-                          <td className="py-1.5 px-3 text-slate-700 border-r">{inc.reason}</td>
-                          <td className="py-1.5 px-2 text-center font-bold text-rose-600">{inc.refereeDecision}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-
-                {/* General notes */}
-                <div className="mt-4">
-                  <div className="font-bold text-slate-900 mb-1 uppercase text-[11px]">
-                    Catatan Umum Technical Delegate:
-                  </div>
-                  <div className="p-2 border border-slate-200 rounded-sm bg-slate-50/50">
-                    {officialMinutes.generalNotes}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Standard Official Signature Blocks (always present at bottom of printed reports except entry_list) */}
           {activePrintDoc !== 'entry_list' && (

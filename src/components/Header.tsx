@@ -107,9 +107,6 @@ export const Header: React.FC = () => {
               <span className="text-sm font-bold tracking-tight text-slate-900 whitespace-nowrap block leading-tight">
                 SwimRace
               </span>
-              <span className="text-[10px] text-slate-500 block truncate max-w-[130px] font-mono leading-tight">
-                {championship.poolLength} · {championship.poolLanes}L
-              </span>
             </div>
           </button>
 
@@ -228,17 +225,6 @@ export const Header: React.FC = () => {
                   >
                     <Award className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                     <span>🏁 Lembar Hasil & Medali</span>
-                  </button>
-                  <div className="border-t border-slate-100 my-1"></div>
-                  <button
-                    onClick={() => {
-                      openPrintModal('official_minutes');
-                      setShowPrintMenu(false);
-                    }}
-                    className="w-full text-left px-3 py-2 hover:bg-slate-50 text-slate-700 flex items-center gap-2 cursor-pointer"
-                  >
-                    <FileText className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span>📜 Berita Acara Resmi (Official Minutes)</span>
                   </button>
                 </div>
               )}

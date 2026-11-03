@@ -6,7 +6,7 @@
 import React, { useState, useMemo } from 'react';
 import { useSwimData } from '../context/SwimDataContext';
 import { Athlete, AgeGroupCode } from '../types/swim';
-import { calculateAge, determineAgeGroup, parseTimeToMs, generateRegisterNumber, formatAgeGroupLabel } from '../utils/timeUtils';
+import { calculateAge, determineAgeGroup, parseTimeToMs, generateRegisterNumber, formatAgeGroupLabel, formatDateToDDMMYYYY } from '../utils/timeUtils';
 import { 
   Plus, 
   Search, 
@@ -134,6 +134,15 @@ export const AthletesView: React.FC = () => {
 
     const finalRegNumber = athRegNumber.trim() || generateRegisterNumber(athName, athletes.length + 1);
 
+    const sanitizedEvents = selectedEventsList.map(r => {
+      const clean = (!r.seedTime || r.seedTime.trim() === '' || r.seedTime.trim() === '00:00.00' || r.seedTime.trim() === '0') ? 'NT' : r.seedTime.trim();
+      return {
+        eventId: r.eventId,
+        seedTime: clean,
+        seedTimeMs: parseTimeToMs(clean),
+      };
+    });
+
     if (editingAthleteId) {
       updateAthlete(editingAthleteId, {
         name: athName,
@@ -142,11 +151,7 @@ export const AthletesView: React.FC = () => {
         gender: athGender,
         birthDate: athBirthDate,
         clubId: athClubId,
-        registeredEvents: selectedEventsList.map(r => ({
-          eventId: r.eventId,
-          seedTime: r.seedTime || '00:00.00',
-          seedTimeMs: parseTimeToMs(r.seedTime),
-        })),
+        registeredEvents: sanitizedEvents,
       });
     } else {
       addAthlete({
@@ -156,7 +161,7 @@ export const AthletesView: React.FC = () => {
         gender: athGender,
         birthDate: athBirthDate,
         clubId: athClubId,
-        registeredEvents: selectedEventsList,
+        registeredEvents: sanitizedEvents,
       });
     }
 
@@ -189,7 +194,7 @@ export const AthletesView: React.FC = () => {
     if (selectedEventsList.some(e => e.eventId === eventId)) {
       setSelectedEventsList(prev => prev.filter(e => e.eventId !== eventId));
     } else {
-      setSelectedEventsList(prev => [...prev, { eventId, seedTime: '00:30.00' }]);
+      setSelectedEventsList(prev => [...prev, { eventId, seedTime: 'NT' }]);
     }
   };
 
@@ -377,7 +382,7 @@ export const AthletesView: React.FC = () => {
                             </span>
                           </td>
                           <td className="py-3 px-4 font-mono tabular-nums">
-                            {ath.birthDate} ({ath.age} th)
+                            {formatDateToDDMMYYYY(ath.birthDate)} ({ath.age} th)
                           </td>
                           <td className="py-3 px-4 font-semibold text-slate-700">
                             {formatAgeGroupLabel(ath.ageGroup, ath.age)}
@@ -393,7 +398,9 @@ export const AthletesView: React.FC = () => {
                                 return (
                                   <div key={r.eventId} className="text-[11px] text-slate-600">
                                     <span className="font-medium">#{ev?.eventNumber || '?'}:</span> {ev?.title?.split(' ')[0]} {ev?.title?.split(' ')[1]}
-                                    <span className="font-mono text-slate-400 ml-1">({r.seedTime})</span>
+                                    <span className="font-mono text-slate-400 ml-1">
+                                      ({(!r.seedTime || r.seedTime === '00:00.00' || r.seedTime === '0' || r.seedTime === 'NT') ? 'NT' : r.seedTime})
+                                    </span>
                                   </div>
                                 );
                               })}
@@ -631,7 +638,7 @@ export const AthletesView: React.FC = () => {
                               type="text"
                               value={selectedItem?.seedTime || ''}
                               onChange={e => updateEventSeedTime(ev.id, e.target.value)}
-                              placeholder="00:26.50"
+                              placeholder="NT"
                               className="w-24 px-2 py-1 text-xs border border-slate-300 rounded font-mono text-center focus:outline-hidden focus:border-sky-500"
                             />
                           </div>

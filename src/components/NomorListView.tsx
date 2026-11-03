@@ -5,7 +5,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useSwimData } from '../context/SwimDataContext';
-import { formatAgeGroupLabel } from '../utils/timeUtils';
+import { formatAgeGroupLabel, formatDateToDDMMYYYY } from '../utils/timeUtils';
 import { 
   Layers, 
   Search, 
@@ -682,7 +682,7 @@ export const NomorListView: React.FC = () => {
                                     {formatAgeGroupLabel(p.ageGroup, p.age)}
                                   </span>
                                   <span className="text-[10px] text-slate-400 block font-mono">
-                                    {p.age} th ({p.birthDate ? p.birthDate.split('-')[0] : '-'})
+                                    {p.age} th ({formatDateToDDMMYYYY(p.birthDate)})
                                   </span>
                                 </td>
 

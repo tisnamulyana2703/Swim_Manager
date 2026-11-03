@@ -12,7 +12,6 @@ import { EventsView } from './components/EventsView';
 import { SeedingView } from './components/SeedingView';
 import { TimekeeperView } from './components/TimekeeperView';
 import { ResultsView } from './components/ResultsView';
-import { OfficialMinutesView } from './components/OfficialMinutesView';
 import { PublicBoardView } from './components/PublicBoardView';
 import { SettingsView } from './components/SettingsView';
 import { EntryListView } from './components/EntryListView';
@@ -41,7 +40,6 @@ const MainContent: React.FC = () => {
         {activeTab === 'buku_acara' && <BukuAcaraView />}
         {activeTab === 'scoreboard' && <PublicBoardView />}
         {activeTab === 'settings' && <SettingsView />}
-        {activeTab === 'minutes' && <OfficialMinutesView />}
       </main>
 
       <footer className="border-t border-slate-200 bg-white py-6 text-xs text-slate-500 print:hidden">
