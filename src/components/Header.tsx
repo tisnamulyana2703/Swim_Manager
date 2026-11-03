@@ -17,7 +17,8 @@ import {
   FileText,
   Layers,
   FileSpreadsheet,
-  Award
+  Award,
+  AlertTriangle
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -26,6 +27,7 @@ export const Header: React.FC = () => {
     setActiveTab, 
     openPrintModal,
     championship,
+    incidents,
     resetToDefaultData,
     exportDatabaseJSON,
     importDatabaseJSON,
@@ -66,6 +68,7 @@ export const Header: React.FC = () => {
     { id: 'timekeeper', label: 'Input Waktu' },
     { id: 'results', label: 'Hasil' },
     { id: 'buku_acara', label: 'Buku Acara' },
+    { id: 'incidents', label: 'Kasus & DQ' },
     { id: 'scoreboard', label: 'Live Skor' },
   ];
 
@@ -115,22 +118,34 @@ export const Header: React.FC = () => {
             {navItems.map(item => {
               const isActive = activeTab === item.id;
               const isBuku = item.id === 'buku_acara';
+              const isIncidents = item.id === 'incidents';
 
               return (
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
+                  className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap shrink-0 transition-colors cursor-pointer flex items-center gap-1.5 ${
                     isActive
                       ? (isBuku 
                           ? 'text-slate-950 bg-amber-400 font-extrabold shadow-2xs' 
+                          : isIncidents
+                          ? 'text-rose-700 bg-rose-100 font-bold'
                           : 'text-sky-700 bg-sky-100/80 font-bold')
                       : (isBuku 
                           ? 'text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 font-bold' 
+                          : isIncidents && incidents.length > 0
+                          ? 'text-rose-700 hover:bg-rose-50'
                           : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100')
                   }`}
                 >
-                  {isBuku ? '📖 Buku Acara' : item.label}
+                  <span>{isBuku ? '📖 Buku Acara' : item.label}</span>
+                  {isIncidents && incidents.length > 0 && (
+                    <span className={`px-1 py-0.2 rounded-full text-[10px] font-mono font-bold leading-none ${
+                      isActive ? 'bg-rose-600 text-white' : 'bg-rose-100 text-rose-700'
+                    }`}>
+                      {incidents.length}
+                    </span>
+                  )}
                 </button>
               );
             })}

@@ -887,6 +887,16 @@ export const PrintModal: React.FC = () => {
           >
             🥇 Perolehan Medali
           </button>
+          <button
+            onClick={() => openPrintModal('incident_report')}
+            className={`px-2.5 py-1 rounded-md font-semibold shrink-0 transition-colors cursor-pointer ${
+              activePrintDoc === 'incident_report'
+                ? 'bg-rose-600 text-white shadow-xs'
+                : 'text-slate-300 hover:text-white hover:bg-slate-700'
+            }`}
+          >
+            ⚠️ Rekap Kasus & DQ
+          </button>
         </div>
 
         {/* Collapsible Contact Editor Toolbar (screen-only) */}
@@ -1754,6 +1764,77 @@ export const PrintModal: React.FC = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* 7. Official Incidents and Disqualifications Report */}
+          {activePrintDoc === 'incident_report' && (
+            <div className="space-y-6">
+              <div className="text-center border-b-2 border-slate-900 pb-3">
+                <h2 className="text-base font-black tracking-tight text-slate-900 uppercase">
+                  LAPORAN KASUS, PELANGGARAN & DISKUALIFIKASI (DQ)
+                </h2>
+                <div className="text-xs font-semibold text-slate-700 uppercase mt-0.5">
+                  STANDAR WORLD AQUATICS & PB AKUATIK INDONESIA
+                </div>
+                <div className="text-xs text-slate-500 mt-1">
+                  Total {incidents.length} Kasus / Diskualifikasi Tercatat
+                </div>
+              </div>
+
+              {incidents.length === 0 ? (
+                <div className="text-center py-12 text-slate-500 text-xs border border-dashed border-slate-300 rounded-lg">
+                  Tidak ada catatan pelanggaran atau diskualifikasi yang terjadi selama perlombaan.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b-2 border-slate-900 text-slate-800 font-bold uppercase text-[10px]">
+                        <th className="py-2 px-2 text-center w-8">No</th>
+                        <th className="py-2 px-2 w-16">Waktu</th>
+                        <th className="py-2 px-2">Acara / Nomor</th>
+                        <th className="py-2 px-2 text-center w-24">Seri/Lintasan</th>
+                        <th className="py-2 px-2">Nama Perenang</th>
+                        <th className="py-2 px-2">Klub / Kontingen</th>
+                        <th className="py-2 px-2 font-mono text-center w-20">Aturan</th>
+                        <th className="py-2 px-2">Alasan & Keputusan Wasit</th>
+                        <th className="py-2 px-2 text-center w-24">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {incidents.map((inc, i) => (
+                        <tr key={inc.id} className="text-[11px]">
+                          <td className="py-2 px-2 text-center font-mono">{i + 1}</td>
+                          <td className="py-2 px-2 font-mono text-slate-600">{inc.timestamp}</td>
+                          <td className="py-2 px-2 font-semibold">
+                            #{inc.eventNumber} {inc.eventTitle}
+                          </td>
+                          <td className="py-2 px-2 text-center font-mono">
+                            Seri {inc.heatNumber} · L-{inc.laneNumber}
+                          </td>
+                          <td className="py-2 px-2 font-bold text-slate-900">{inc.athleteName}</td>
+                          <td className="py-2 px-2 text-slate-700">{inc.clubName}</td>
+                          <td className="py-2 px-2 font-mono font-bold text-rose-700 text-center">{inc.ruleCode}</td>
+                          <td className="py-2 px-2">
+                            <div className="font-medium">{inc.reason}</div>
+                            <div className="text-[10px] text-slate-500 italic mt-0.5">Keputusan: {inc.refereeDecision}</div>
+                          </td>
+                          <td className="py-2 px-2 text-center font-bold">
+                            {inc.status === 'WARNING' ? (
+                              <span className="text-amber-700">Peringatan</span>
+                            ) : inc.status === 'OVERTURNED' ? (
+                              <span className="text-emerald-700">Banding Diterima</span>
+                            ) : (
+                              <span className="text-rose-700">Diskualifikasi (DQ)</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 

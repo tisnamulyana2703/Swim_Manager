@@ -17,6 +17,7 @@ import { SettingsView } from './components/SettingsView';
 import { EntryListView } from './components/EntryListView';
 import { NomorListView } from './components/NomorListView';
 import { BukuAcaraView } from './components/BukuAcaraView';
+import { IncidentsView } from './components/IncidentsView';
 import { PrintModal } from './components/PrintModal';
 
 const MainContent: React.FC = () => {
@@ -38,6 +39,7 @@ const MainContent: React.FC = () => {
         {activeTab === 'timekeeper' && <TimekeeperView />}
         {activeTab === 'results' && <ResultsView />}
         {activeTab === 'buku_acara' && <BukuAcaraView />}
+        {activeTab === 'incidents' && <IncidentsView />}
         {activeTab === 'scoreboard' && <PublicBoardView />}
         {activeTab === 'settings' && <SettingsView />}
       </main>

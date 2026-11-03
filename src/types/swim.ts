@@ -154,6 +154,9 @@ export interface DQViolation {
   stroke?: Stroke | 'GENERAL';
 }
 
+export type IncidentCategory = 'START' | 'STROKE' | 'TURN' | 'FINISH' | 'CONDUCT' | 'PROTEST' | 'OTHER';
+export type IncidentStatus = 'CONFIRMED_DQ' | 'WARNING' | 'OVERTURNED' | 'PROTEST_PENDING';
+
 export interface IncidentReport {
   id: string;
   timestamp: string;
@@ -167,6 +170,10 @@ export interface IncidentReport {
   reason: string;
   refereeDecision: string;
   signedByRef: boolean;
+  category?: IncidentCategory;
+  reportedBy?: string;
+  officialNotes?: string;
+  status?: IncidentStatus;
 }
 
 export interface LaneDetailConfig {

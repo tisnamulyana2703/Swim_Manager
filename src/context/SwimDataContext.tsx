@@ -70,6 +70,7 @@ export type ActiveTab =
   | 'timekeeper' 
   | 'results' 
   | 'buku_acara'
+  | 'incidents'
   | 'scoreboard'
   | 'settings';
 
@@ -82,6 +83,7 @@ export type PrintDocumentType =
   | 'result_sheet' 
   | 'medal_tally' 
   | 'best_swimmer' 
+  | 'incident_report'
   | null;
 
 interface SwimDataContextType {
@@ -162,6 +164,7 @@ interface SwimDataContextType {
 
   // Official Minutes & Incidents
   addIncident: (incident: Omit<IncidentReport, 'id' | 'timestamp'>) => void;
+  updateIncident: (id: string, updates: Partial<IncidentReport>) => void;
   deleteIncident: (id: string) => void;
   updateOfficialMinutes: (updates: Partial<OfficialMinutes>) => void;
 
@@ -944,6 +947,11 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             inc => inc.eventNumber === event.eventNumber && inc.heatNumber === heatNumber && inc.laneNumber === res.laneNumber
           );
           if (!existingIncident && athlete) {
+            const isStart = res.dqRuleCode.startsWith('SW 4');
+            const isTurn = res.dqRuleCode.includes('6.4') || res.dqRuleCode.includes('7.6') || res.dqRuleCode.includes('8.4') || res.dqRuleCode.toLowerCase().includes('turn') || res.dqRuleCode.toLowerCase().includes('balik');
+            const isFinish = res.dqRuleCode.toLowerCase().includes('finis') || res.dqRuleCode.includes('6.5');
+            const category = isStart ? 'START' : isTurn ? 'TURN' : isFinish ? 'FINISH' : 'STROKE';
+
             const newInc: IncidentReport = {
               id: `inc-${Date.now()}-${res.laneNumber}`,
               timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
@@ -957,6 +965,9 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               reason: res.dqReason || 'Pelanggaran aturan gaya World Aquatics',
               refereeDecision: `Diskualifikasi (DQ) disahkan berdasarkan laporan Juri Lintasan ${res.laneNumber}`,
               signedByRef: true,
+              category,
+              reportedBy: `Juri Pembalikan / Lintasan ${res.laneNumber}`,
+              status: 'CONFIRMED_DQ',
             };
             setIncidents(prevInc => {
               const next = [newInc, ...prevInc];
@@ -992,7 +1003,7 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }));
   };
 
-  // Official Minutes
+  // Official Minutes & Incidents
   const addIncident = (incident: Omit<IncidentReport, 'id' | 'timestamp'>) => {
     const newInc: IncidentReport = {
       ...incident,
@@ -1002,6 +1013,18 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setIncidents(prev => [newInc, ...prev]);
     setDoc(doc(db, 'incidents', newInc.id), cleanForFirestore(newInc))
       .catch(err => console.warn('Firestore addIncident:', err));
+  };
+
+  const updateIncident = (id: string, updates: Partial<IncidentReport>) => {
+    setIncidents(prev => {
+      const next = prev.map(inc => (inc.id === id ? { ...inc, ...updates } : inc));
+      const target = next.find(inc => inc.id === id);
+      if (target) {
+        setDoc(doc(db, 'incidents', id), cleanForFirestore(target))
+          .catch(err => console.warn('Firestore updateIncident:', err));
+      }
+      return next;
+    });
   };
 
   const deleteIncident = (id: string) => {
@@ -1210,6 +1233,7 @@ export const SwimDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         reassignLane,
         saveHeatResults,
         addIncident,
+        updateIncident,
         deleteIncident,
         updateOfficialMinutes,
         clubMedalTally,
