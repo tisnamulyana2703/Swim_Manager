@@ -5,7 +5,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useSwimData } from '../context/SwimDataContext';
-import { formatAgeGroupLabel } from '../utils/timeUtils';
+import { formatAgeGroupLabel, getCategoryLetter } from '../utils/timeUtils';
 import { 
   Users, 
   Search, 
@@ -535,7 +535,7 @@ export const EntryListView: React.FC = () => {
                 <th className="py-3 px-4 w-12 text-center">No</th>
                 <th className="py-3 px-4">No. Register</th>
                 <th className="py-3 px-4">Nama Atlet</th>
-                <th className="py-3 px-4 text-center">Usia</th>
+                <th className="py-3 px-4 text-center w-16">KU</th>
                 <th className="py-3 px-4">Klub / Kontingen</th>
                 <th className="py-3 px-4">Nomor Lomba</th>
                 <th className="py-3 px-4 font-mono text-center">Seed Time</th>
@@ -579,12 +579,9 @@ export const EntryListView: React.FC = () => {
                         </div>
                       </td>
 
-                      {/* Usia & Kategori */}
-                      <td className="py-3 px-4 text-center whitespace-nowrap">
-                        <span className="font-bold text-slate-800">{entry.age} Thn</span>
-                        <span className="block text-[10px] text-slate-400">
-                          {formatAgeGroupLabel(entry.ageGroup, entry.age)}
-                        </span>
+                      {/* KU */}
+                      <td className="py-3 px-4 text-center font-bold text-slate-900 font-mono text-xs">
+                        {getCategoryLetter(entry.ageGroup, entry.age)}
                       </td>
 
                       {/* Klub */}

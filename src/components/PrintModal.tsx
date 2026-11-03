@@ -1248,16 +1248,14 @@ export const PrintModal: React.FC = () => {
                     {/* Participant Table */}
                     <table className="print-nomor-list-table print-entry-list-table w-full text-xs border border-black border-collapse">
                       <colgroup>
-                        <col style={{ width: '3.5%' }} />
-                        <col style={{ width: '9%' }} />
-                        <col style={{ width: '27%' }} />
                         <col style={{ width: '4%' }} />
+                        <col style={{ width: '12%' }} />
+                        <col style={{ width: '32%' }} />
+                        <col style={{ width: '5%' }} />
                         <col style={{ width: '6%' }} />
-                        <col style={{ width: '8.5%' }} />
-                        <col style={{ width: '4.5%' }} />
-                        <col style={{ width: '20%' }} />
-                        <col style={{ width: '9.5%' }} />
-                        <col style={{ width: '8%' }} />
+                        <col style={{ width: '22%' }} />
+                        <col style={{ width: '10%' }} />
+                        <col style={{ width: '9%' }} />
                       </colgroup>
                       <thead>
                         <tr>
@@ -1266,8 +1264,6 @@ export const PrintModal: React.FC = () => {
                           <th className="border border-black px-2 py-1 text-left font-bold text-red-600">NAMA LENGKAP ATLET</th>
                           <th className="border border-black px-1 py-1 text-center font-bold text-red-600">L/P</th>
                           <th className="border border-black px-1 py-1 text-center font-bold text-red-600">KU</th>
-                          <th className="border border-black px-1 py-1 text-center font-bold text-red-600">TGL LAHIR</th>
-                          <th className="border border-black px-1 py-1 text-center font-bold text-red-600">UMUR</th>
                           <th className="border border-black px-2 py-1 text-left font-bold text-red-600">KLUB RENANG</th>
                           <th className="border border-black px-1.5 py-1 text-center font-bold text-red-600">SEED TIME</th>
                           <th className="border border-black px-1 py-1 text-center font-bold text-red-600">SERI/LN</th>
@@ -1276,7 +1272,7 @@ export const PrintModal: React.FC = () => {
                       <tbody>
                         {participants.length === 0 ? (
                           <tr>
-                            <td colSpan={10} className="border border-black py-3 text-center text-slate-500 italic">
+                            <td colSpan={8} className="border border-black py-3 text-center text-slate-500 italic">
                               Belum ada peserta yang mendaftar pada nomor lomba ini.
                             </td>
                           </tr>
@@ -1287,9 +1283,7 @@ export const PrintModal: React.FC = () => {
                               <td className="border border-black px-1.5 py-1 text-center font-mono font-bold">{p.regNumber}</td>
                               <td className="border border-black px-2 py-1 text-left font-bold uppercase">{p.name}</td>
                               <td className="border border-black px-1 py-1 text-center font-semibold">{p.gender === 'MALE' ? 'L' : 'P'}</td>
-                              <td className="border border-black px-1 py-1 text-center font-medium">{getKU(p.ageGroup, p.age)}</td>
-                              <td className="border border-black px-1 py-1 text-center font-mono">{formatDateToDDMMYYYY(p.birthDate)}</td>
-                              <td className="border border-black px-1 py-1 text-center font-mono font-medium">{p.age}</td>
+                              <td className="border border-black px-1 py-1 text-center font-bold font-mono">{getKU(p.ageGroup, p.age)}</td>
                               <td className="border border-black px-2 py-1 text-left uppercase font-medium">{p.clubName}</td>
                               <td className="border border-black px-1.5 py-1 text-center font-mono font-bold">{p.seedTime || 'NT'}</td>
                               <td className="border border-black px-1 py-1 text-center font-mono font-semibold">
@@ -1301,7 +1295,7 @@ export const PrintModal: React.FC = () => {
                       </tbody>
                       <tfoot>
                         <tr className="bg-slate-50 font-bold border-t border-black text-black">
-                          <td colSpan={8} className="border border-black px-2 py-1 text-right font-extrabold uppercase text-[10.5px]">
+                          <td colSpan={6} className="border border-black px-2 py-1 text-right font-extrabold uppercase text-[10.5px]">
                             SUBTOTAL PESERTA NOMOR LOMBA #{ev.eventNumber}:
                           </td>
                           <td colSpan={2} className="border border-black px-2 py-1 text-center font-black text-red-600 text-[10.5px]">
